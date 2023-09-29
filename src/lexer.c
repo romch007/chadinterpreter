@@ -1,6 +1,7 @@
 #include "lexer.h"
 #include "mem.h"
 #include <ctype.h>
+#include <stdbool.h>
 #include <string.h>
 
 static size_t current_pos = 0;
@@ -32,11 +33,20 @@ static void vector_token_deleter(void* element) {
     }
 }
 
-vc_vector* tokenize(char* value) {
+static bool is_blank(char c) {
+    return c == ' ' || c == '\r' || c == '\n' || c == '\t';
+}
+
+static bool is_valid_identifier(char c) {
+    return c == '_' || isalpha(c);
+}
+
+cvector_vector_type(token_t) tokenize(char* value) {
     current_pos = 0;
     input = value;
     input_len = strlen(value);
-    vc_vector* tokens = vc_vector_create(0, sizeof(token_t), &vector_token_deleter);
+    cvector_vector_type(token_t) tokens = NULL;
+    cvector_init(tokens, 0, &vector_token_deleter);
 
     for (;;) {
         char c = peek(0);
@@ -45,141 +55,78 @@ vc_vector* tokenize(char* value) {
 
         if (c == '\0') {
             token.type = TOKEN_EOS;
-            vc_vector_push_back(tokens, &token);
+            cvector_push_back(tokens, token);
             break;
         }
 
-        switch (c) {
-            case ' ':
-            case '\t':
-            case '\r':
-                ignore = true;
-                break;// Ignore blanks
-            case '+':
-                token.type = TOKEN_PLUS;
-                break;
-            case '-':
-                token.type = TOKEN_MINUS;
-                break;
-            case '*':
-                token.type = TOKEN_MUL;
-                break;
-            case '/':
-                token.type = TOKEN_DIV;
-                break;
-            case '(':
-                token.type = TOKEN_OPEN_PAREN;
-                break;
-            case ')':
-                token.type = TOKEN_CLOSE_PAREN;
-                break;
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9': {
-                size_t start = current_pos;
-                char next;
+        if (is_blank(c)) {
+            ignore = true;
+        } else if (c == '+') {
+            token.type = TOKEN_PLUS;
+        } else if (c == '-') {
+            token.type = TOKEN_MINUS;
+        } else if (c == '*') {
+            token.type = TOKEN_MUL;
+        } else if (c == '/') {
+            token.type = TOKEN_DIV;
+        } else if (c == '(') {
+            token.type = TOKEN_OPEN_PAREN;
+        } else if (c == ')') {
+            token.type = TOKEN_CLOSE_PAREN;
+        } else if (c == '=') {
+            token.type = TOKEN_EQUAL;
+        } else if (c == ';') {
+            token.type = TOKEN_SEMICOLON;
+        } else if (isdigit(c)) {
+            size_t start = current_pos;
+            char next;
 
-                for (;;) {
-                    next = peek(1);
-                    if (!isdigit(next)) {
-                        break;
-                    }
-
-                    current_pos++;
+            for (;;) {
+                next = peek(1);
+                if (!isdigit(next)) {
+                    break;
                 }
 
-                const char* repr = &input[start];
-                token.type = TOKEN_INT_LITERAL;
-                token.value.integer = str_to_int(repr, (current_pos - start) + 1);
-                break;
+                current_pos++;
             }
-            case 'a':
-            case 'b':
-            case 'c':
-            case 'd':
-            case 'e':
-            case 'f':
-            case 'g':
-            case 'h':
-            case 'i':
-            case 'j':
-            case 'k':
-            case 'l':
-            case 'm':
-            case 'n':
-            case 'o':
-            case 'p':
-            case 'q':
-            case 'r':
-            case 's':
-            case 't':
-            case 'u':
-            case 'v':
-            case 'w':
-            case 'x':
-            case 'y':
-            case 'A':
-            case 'B':
-            case 'C':
-            case 'D':
-            case 'E':
-            case 'F':
-            case 'G':
-            case 'H':
-            case 'I':
-            case 'J':
-            case 'K':
-            case 'L':
-            case 'M':
-            case 'N':
-            case 'O':
-            case 'P':
-            case 'Q':
-            case 'R':
-            case 'S':
-            case 'T':
-            case 'U':
-            case 'V':
-            case 'W':
-            case 'X':
-            case 'Y': {
-                size_t start = current_pos;
 
-                while (isalpha(peek(1))) current_pos++;
+            const char* repr = &input[start];
+            token.type = TOKEN_INT_LITERAL;
+            token.value.integer = str_to_int(repr, (current_pos - start) + 1);
+        } else if (is_valid_identifier(c)) {
+            size_t start = current_pos;
 
-                size_t len = (current_pos - start) + 1;
+            while (isalpha(peek(1))) current_pos++;
+
+            size_t len = (current_pos - start) + 1;
+
+            if (strncmp(&input[start], "let", len) == 0) {
+                token.type = TOKEN_LET;
+            } else if (strncmp(&input[start], "const", len) == 0) {
+                token.type = TOKEN_CONST;
+            } else {
                 token.type = TOKEN_IDENTIFIER;
                 token.value.str = xmalloc(sizeof(char) * len);
                 strncpy(token.value.str, &input[start], len);
-                break;
             }
-            case '\'': {
-                size_t start = current_pos;
+        } else if (c == '\'') {
+            size_t start = current_pos;
 
-                while (peek(1) != '\'') current_pos++;
-                start++;
+            while (peek(1) != '\'') current_pos++;
+            start++;
 
-                size_t len = (current_pos - start) + 1;
-                token.type = TOKEN_STR_LITERAL;
-                token.value.str = xmalloc(sizeof(char) * len);
-                strncpy(token.value.str, &input[start], len);
-                current_pos++;
-                break;
-            }
-            default:
-                printf("ERROR: invalid character %c", c);
-                return NULL;
+            size_t len = (current_pos - start) + 1;
+            token.type = TOKEN_STR_LITERAL;
+            token.value.str = xmalloc(sizeof(char) * len);
+            strncpy(token.value.str, &input[start], len);
+            current_pos++;
+        } else {
+            printf("ERROR: invalid character %c", c);
+            return NULL;
         }
 
         if (!ignore)
-            vc_vector_push_back(tokens, &token);
+            cvector_push_back(tokens, token);
 
         current_pos++;
     }
@@ -209,16 +156,21 @@ static char* token_type_to_string(token_type_t type) {
             return "OPEN_PAREN";
         case TOKEN_CLOSE_PAREN:
             return "CLOSE_PAREN";
+        case TOKEN_CONST:
+            return "CONST";
+        case TOKEN_LET:
+            return "LET";
+        case TOKEN_EQUAL:
+            return "EQUAL";
+        case TOKEN_SEMICOLON:
+            return "SEMICOLON";
         default:
             return "<UNKNOWN>";
     }
 }
 
-void print_tokens(vc_vector* tokens) {
-    for (void* i = vc_vector_begin(tokens);
-         i != vc_vector_end(tokens);
-         i = vc_vector_next(tokens, i)) {
-        token_t* token = (token_t*) i;
+void print_tokens(cvector_vector_type(token_t) tokens) {
+    for (token_t* token = cvector_begin(tokens); token != cvector_end(tokens); ++token) {
         printf("%s", token_type_to_string(token->type));
         if (token->type == TOKEN_INT_LITERAL) {
             printf(" - %d\n", token->value.integer);

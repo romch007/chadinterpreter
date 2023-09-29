@@ -1,9 +1,16 @@
+#define CVECTOR_LOGARITHMIC_GROWTH
+
 #include "lexer.h"
+#include "parser.h"
 
 int main(int argc, char** argv) {
-    // ast_expr_t* exp = make_binary_op(ADD, make_integer_literal(4), make_string_literal("hey"));
-
-    vc_vector* tokens = tokenize("(44 + 'abc?!') - 0");
+    cvector_vector_type(token_t) tokens = tokenize("let result = 1 + 1; const pi = 314;");
     print_tokens(tokens);
-    vc_vector_release(tokens);
+    parser_t parser = {
+            .token_index = 0,
+            .tokens = tokens,
+            .token_count = cvector_size(tokens),
+    };
+    statement_t* root = parse_statement(&parser);
+    free_statement(root);
 }
