@@ -25,7 +25,7 @@ static int str_to_int(const char* str, size_t len) {
     return ret;
 }
 
-static void vector_token_deleter(void* element) {
+void vector_token_deleter(void* element) {
     token_t* token = (token_t*) element;
     if (token->type == TOKEN_IDENTIFIER || token->type == TOKEN_STR_LITERAL) {
         free(token->value.str);
@@ -45,7 +45,6 @@ cvector_vector_type(token_t) tokenize(char* value) {
     input = value;
     input_len = strlen(value);
     cvector_vector_type(token_t) tokens = NULL;
-    cvector_init(tokens, 0, &vector_token_deleter);
 
     for (;;) {
         char c = peek(0);

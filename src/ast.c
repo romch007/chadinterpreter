@@ -64,7 +64,6 @@ expr_t* make_function_call(char* name) {
     expr->type = EXPR_FUNCTION_CALL;
     expr->op.function_call.name = copy_alloc(name);
     expr->op.function_call.arguments = NULL;
-    cvector_init(expr->op.function_call.arguments, 0, &vector_expr_deleter);
     return expr;
 }
 
@@ -76,10 +75,14 @@ void free_expr(expr_t* expr) {
             free(expr->op.string_literal);
             break;
         case EXPR_BINARY_OPT:
+            free_expr(expr->op.binary.lhs);
             free(expr->op.binary.lhs);
+
+            free_expr(expr->op.binary.rhs);
             free(expr->op.binary.rhs);
             break;
         case EXPR_UNARY_OPT:
+            free_expr(expr->op.unary.arg);
             free(expr->op.unary.arg);
             break;
         case EXPR_VARIABLE_USE:
@@ -87,12 +90,12 @@ void free_expr(expr_t* expr) {
             break;
         case EXPR_FUNCTION_CALL:
             free(expr->op.function_call.name);
+            cvector_set_elem_destructor(expr->op.function_call.arguments, vector_expr_deleter);
             cvector_free(expr->op.function_call.arguments);
             break;
         default:
             break;
     }
-    free(expr);
 }
 
 
@@ -100,7 +103,6 @@ statement_t* make_block_statement() {
     statement_t* statement = xmalloc(sizeof(statement_t));
     statement->type = STATEMENT_BLOCK;
     statement->op.block.statements = NULL;
-    cvector_init(statement->op.block.statements, 0, &vector_statement_deleter);
     return statement;
 }
 
@@ -142,26 +144,36 @@ void free_statement(statement_t* statement) {
 
     switch (statement->type) {
         case STATEMENT_BLOCK:
+            cvector_set_elem_destructor(statement->op.block.statements, vector_statement_deleter);
             cvector_free(statement->op.block.statements);
             break;
         case STATEMENT_VARIABLE_DECL:
             free(statement->op.variable_declaration.variable_name);
+
             free_expr(statement->op.variable_declaration.value);
+            free(statement->op.variable_declaration.value);
             break;
         case STATEMENT_IF_CONDITION:
             free_expr(statement->op.if_condition.condition);
+            free(statement->op.if_condition.condition);
+
             free_statement(statement->op.if_condition.body);
+            free(statement->op.if_condition.body);
+
             free_statement(statement->op.if_condition.body_else);
+            free(statement->op.if_condition.body_else);
             break;
         case STATEMENT_VARIABLE_ASSIGN:
             free(statement->op.variable_assignment.variable_name);
+
             free_expr(statement->op.variable_assignment.value);
+            free(statement->op.variable_assignment.value);
             break;
         case STATEMENT_NAKED_FN_CALL:
             free_expr(statement->op.naked_fn_call.function_call);
+            free(statement->op.naked_fn_call.function_call);
             break;
         default:
             break;
     }
-    free(statement);
 }

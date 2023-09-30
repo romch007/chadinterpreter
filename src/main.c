@@ -21,7 +21,7 @@ static char* read_file_content(char* filename) {
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-        printf("ERROR: no file specified");
+        printf("ERROR: no file specified\n");
         return 1;
     }
 
@@ -35,6 +35,8 @@ int main(int argc, char** argv) {
             .token_count = cvector_size(tokens),
     };
     statement_t* root = parse_block(&parser);
+
+    cvector_set_elem_destructor(tokens, vector_token_deleter);
     cvector_free(tokens);
 
     free_statement(root);
