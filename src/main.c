@@ -2,15 +2,42 @@
 
 #include "lexer.h"
 #include "parser.h"
+#include "debug.h"
+#include <stdio.h>
+
+static char* read_file_content(char* filename) {
+    FILE* file = fopen(filename, "r");
+    fseek(file, 0, SEEK_END);
+    long fsize = ftell(file);
+    fseek(file, 0, SEEK_SET);  /* same as rewind(f); */
+
+    char *string = malloc(fsize + 1);
+    fread(string, fsize, 1, file);
+    fclose(file);
+
+    string[fsize] = 0;
+
+    return string;
+}
 
 int main(int argc, char** argv) {
-    cvector_vector_type(token_t) tokens = tokenize("let result = 1 + 1; const pi = 314;");
-    print_tokens(tokens);
+    if (argc < 2) {
+        printf("ERROR: no file specified");
+        return 1;
+    }
+
+    char* content = read_file_content(argv[1]);
+    cvector_vector_type(token_t) tokens = tokenize(content);
+
     parser_t parser = {
             .token_index = 0,
             .tokens = tokens,
             .token_count = cvector_size(tokens),
     };
-    statement_t* root = parse_statement(&parser);
+    statement_t* root = parse(&parser);
+    cvector_free(tokens);
+
+    print_expression(root->op.block.statements[0]->op.variable_declaration.value, 0);
+
     free_statement(root);
 }

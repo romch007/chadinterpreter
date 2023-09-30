@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -7,7 +6,7 @@
 
 expr_t* make_binary_op(binary_opt_type_t type, expr_t* lhs, expr_t* rhs) {
     expr_t* expr = xmalloc(sizeof(expr_t));
-    expr->type = BINARY_OPT;
+    expr->type = EXPR_BINARY_OPT;
     expr->op.binary.type = type;
     expr->op.binary.lhs = lhs;
     expr->op.binary.rhs = rhs;
@@ -16,7 +15,7 @@ expr_t* make_binary_op(binary_opt_type_t type, expr_t* lhs, expr_t* rhs) {
 
 expr_t* make_unary_op(unary_opt_type_t type, expr_t* arg) {
     expr_t* expr = xmalloc(sizeof(expr_t));
-    expr->type = UNARY_OPT;
+    expr->type = EXPR_UNARY_OPT;
     expr->op.unary.type = type;
     expr->op.unary.arg = arg;
     return expr;
@@ -24,14 +23,14 @@ expr_t* make_unary_op(unary_opt_type_t type, expr_t* arg) {
 
 expr_t* make_integer_literal(int value) {
     expr_t* expr = xmalloc(sizeof(expr_t));
-    expr->type = INT_LITERAL;
+    expr->type = EXPR_INT_LITERAL;
     expr->op.integer_literal = value;
     return expr;
 }
 
 expr_t* make_string_literal(char* value) {
     expr_t* expr = xmalloc(sizeof(expr_t));
-    expr->type = STRING_LITERAL;
+    expr->type = EXPR_STRING_LITERAL;
     char* in_value = xmalloc(sizeof(char) * strlen(value));
     strcpy(in_value, value);
     expr->op.string_literal = in_value;
@@ -40,7 +39,7 @@ expr_t* make_string_literal(char* value) {
 
 expr_t* make_variable_use(char* name) {
     expr_t* expr = xmalloc(sizeof(expr_t));
-    expr->type = VARIABLE_USE;
+    expr->type = EXPR_VARIABLE_USE;
     char* in_name = xmalloc(sizeof(char) * strlen(name));
     strcpy(in_name, name);
     expr->op.variable_use.name = in_name;
@@ -49,17 +48,17 @@ expr_t* make_variable_use(char* name) {
 
 void free_expr(expr_t* expr) {
     switch (expr->type) {
-        case STRING_LITERAL:
+        case EXPR_STRING_LITERAL:
             free(expr->op.string_literal);
             break;
-        case BINARY_OPT:
+        case EXPR_BINARY_OPT:
             free(expr->op.binary.lhs);
             free(expr->op.binary.rhs);
             break;
-        case UNARY_OPT:
+        case EXPR_UNARY_OPT:
             free(expr->op.unary.arg);
             break;
-        case VARIABLE_USE:
+        case EXPR_VARIABLE_USE:
             free(expr->op.variable_use.name);
             break;
         default:
@@ -75,15 +74,15 @@ static void vector_statement_deleter(void* element) {
 
 statement_t* make_block_statement() {
     statement_t* statement = xmalloc(sizeof(statement_t));
-    statement->type = BLOCK;
+    statement->type = STATEMENT_BLOCK;
     statement->op.block.statements = NULL;
-    cvector_init(statement->op.block.statements, 0, &vector_statement_deleter); // NOLINT(*-sizeof-expression)
+    cvector_init(statement->op.block.statements, 0, &vector_statement_deleter);
     return statement;
 }
 
 statement_t* make_variable_declaration(bool constant, char* variable_name, expr_t* value) {
     statement_t* statement = xmalloc(sizeof(statement_t));
-    statement->type = VARIABLE_DECLARATION;
+    statement->type = STATEMENT_VARIABLE_DECL;
     statement->op.variable_declaration.constant = constant;
     char* in_variable_name = xmalloc(sizeof(char) * strlen(variable_name));
     strcpy(in_variable_name, variable_name);
@@ -94,10 +93,10 @@ statement_t* make_variable_declaration(bool constant, char* variable_name, expr_
 
 void free_statement(statement_t* statement) {
     switch (statement->type) {
-        case BLOCK:
+        case STATEMENT_BLOCK:
             cvector_free(statement->op.block.statements);
             break;
-        case VARIABLE_DECLARATION:
+        case STATEMENT_VARIABLE_DECL:
             free(statement->op.variable_declaration.variable_name);
             free_expr(statement->op.variable_declaration.value);
             break;

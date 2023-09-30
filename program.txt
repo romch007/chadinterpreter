@@ -1,2 +1,2 @@
-let stuff = 45;
-const truc = 'rrt';
+let stuff = (-45 / 7) * 9;
+const truc = 23;

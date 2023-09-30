@@ -13,6 +13,15 @@ static void* xmalloc(const size_t size) {
     return ptr;
 }
 
+static void* xcalloc(const size_t count, const size_t size) {
+    void* ptr = calloc(count, size);
+    if (ptr == NULL) {
+        printf("ERROR: can't callocate %zu bytes", size);
+        abort();
+    }
+    return ptr;
+}
+
 static void* xrealloc(void* original, const size_t size) {
     void* ptr = realloc(original, size);
     if (ptr == NULL) {

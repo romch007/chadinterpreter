@@ -10,6 +10,7 @@
 #include <assert.h> /* for assert */
 #include <stdlib.h> /* for malloc/realloc/free */
 #include <string.h> /* for memcpy/memmove */
+#include "mem.h"
 
 /* cvector heap implemented using C library malloc() */
 
@@ -20,13 +21,13 @@
 #define cvector_clib_free free
 #endif
 #ifndef cvector_clib_malloc
-#define cvector_clib_malloc malloc
+#define cvector_clib_malloc xmalloc
 #endif
 #ifndef cvector_clib_calloc
-#define cvector_clib_calloc calloc
+#define cvector_clib_calloc xcalloc
 #endif
 #ifndef cvector_clib_realloc
-#define cvector_clib_realloc realloc
+#define cvector_clib_realloc xrealloc
 #endif
 
 typedef void (*cvector_elem_destructor_t)(void* elem);

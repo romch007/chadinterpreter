@@ -10,7 +10,11 @@ typedef struct {
     size_t token_index;
 } parser_t;
 
-statement_t* parse_statement(parser_t* parser);
+statement_t* parse(parser_t* parser);
 statement_t* parse_variable_declaration(parser_t* parser);
+
+expr_t* parse_expression(parser_t* parser);
+expr_t* parse_term(parser_t* parser);
+expr_t* parse_factor(parser_t* parser);
 
 #endif

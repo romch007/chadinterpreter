@@ -122,7 +122,7 @@ cvector_vector_type(token_t) tokenize(char* value) {
             current_pos++;
         } else {
             printf("ERROR: invalid character %c", c);
-            return NULL;
+            abort();
         }
 
         if (!ignore)
@@ -134,7 +134,7 @@ cvector_vector_type(token_t) tokenize(char* value) {
     return tokens;
 }
 
-static char* token_type_to_string(token_type_t type) {
+char* token_type_to_string(token_type_t type) {
     switch (type) {
         case TOKEN_IDENTIFIER:
             return "IDENTIFIER";
@@ -147,7 +147,7 @@ static char* token_type_to_string(token_type_t type) {
         case TOKEN_DIV:
             return "DIV";
         case TOKEN_INT_LITERAL:
-            return "INT_LITERAL";
+            return "EXPR_INT_LITERAL";
         case TOKEN_STR_LITERAL:
             return "STR_LITERAL";
         case TOKEN_EOS:

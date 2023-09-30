@@ -5,22 +5,22 @@
 #include <stdbool.h>
 
 typedef enum {
-    BINARY_OPT,
-    UNARY_OPT,
-    INT_LITERAL,
-    STRING_LITERAL,
-    VARIABLE_USE
+    EXPR_BINARY_OPT,
+    EXPR_UNARY_OPT,
+    EXPR_INT_LITERAL,
+    EXPR_STRING_LITERAL,
+    EXPR_VARIABLE_USE
 } expr_type_t;
 
 typedef enum {
-    BINARY_ADD,
-    BINARY_SUB,
-    BINARY_MUL,
-    BINARY_DIV
+    BINARY_OP_ADD,
+    BINARY_OP_SUB,
+    BINARY_OP_MUL,
+    BINARY_OP_DIV
 } binary_opt_type_t;
 
 typedef enum {
-    UNARY_NEG
+    UNARY_OP_NEG
 } unary_opt_type_t;
 
 typedef struct expr {
@@ -56,8 +56,8 @@ expr_t* make_variable_use(char* name);
 void free_expr(expr_t* expr);
 
 typedef enum {
-    BLOCK,
-    VARIABLE_DECLARATION,
+    STATEMENT_BLOCK,
+    STATEMENT_VARIABLE_DECL,
 } statement_type_t;
 
 typedef struct statement {
