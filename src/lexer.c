@@ -167,8 +167,9 @@ cvector_vector_type(token_t) tokenize(char* value) {
                 token.value.boolean = false;
             } else {
                 token.type = TOKEN_IDENTIFIER;
-                token.value.str = xmalloc(sizeof(char) * len);
+                token.value.str = xmalloc(sizeof(char) * (len + 1));
                 strncpy(token.value.str, &input[start], len);
+                token.value.str[len + 1] = '\0';
             }
         } else if (c == '\'') {
             size_t start = current_pos;
@@ -178,8 +179,9 @@ cvector_vector_type(token_t) tokenize(char* value) {
 
             size_t len = (current_pos - start) + 1;
             token.type = TOKEN_STR_LITERAL;
-            token.value.str = xmalloc(sizeof(char) * len);
+            token.value.str = xmalloc(sizeof(char) * (len + 1));
             strncpy(token.value.str, &input[start], len);
+            token.value.str[len + 1] = '\0';
             current_pos++;
         } else {
             printf("ERROR: invalid character %c", c);
