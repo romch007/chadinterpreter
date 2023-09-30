@@ -35,7 +35,7 @@ int main(int argc, char** argv) {
             .tokens = tokens,
             .token_count = cvector_size(tokens),
     };
-    statement_t* root = parse(&parser);
+    statement_t* root = parse_block(&parser);
     cvector_free(tokens);
 
     free_statement(root);

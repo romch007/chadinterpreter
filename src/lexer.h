@@ -3,6 +3,7 @@
 
 #include "cvector.h"
 #include <stddef.h>
+#include <stdbool.h>
 
 typedef enum {
 #define PNS_INTERPRETER_TOKEN(X) TOKEN_##X,
@@ -14,6 +15,7 @@ typedef struct {
     union {
         char* str;
         int integer;
+        bool boolean;
     } value;
 } token_t;
 

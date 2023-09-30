@@ -21,6 +21,13 @@ expr_t* make_unary_op(unary_opt_type_t type, expr_t* arg) {
     return expr;
 }
 
+expr_t* make_bool_literal(bool value) {
+    expr_t* expr = xmalloc(sizeof(expr_t));
+    expr->type = EXPR_BOOL_LITERAL;
+    expr->op.bool_literal = value;
+    return expr;
+}
+
 expr_t* make_integer_literal(int value) {
     expr_t* expr = xmalloc(sizeof(expr_t));
     expr->type = EXPR_INT_LITERAL;
@@ -76,6 +83,14 @@ statement_t* make_block_statement() {
     return statement;
 }
 
+statement_t* make_if_condition_statement(expr_t* condition, statement_t* body) {
+    statement_t* statement = xmalloc(sizeof(statement_t));
+    statement->type = STATEMENT_IF_CONDITION;
+    statement->op.if_condition.condition = condition;
+    statement->op.if_condition.body = body;
+    return statement;
+}
+
 statement_t* make_variable_declaration(bool constant, char* variable_name, char* type_name, expr_t* value) {
     statement_t* statement = xmalloc(sizeof(statement_t));
     statement->type = STATEMENT_VARIABLE_DECL;
@@ -83,6 +98,14 @@ statement_t* make_variable_declaration(bool constant, char* variable_name, char*
     statement->op.variable_declaration.variable_name = copy_alloc(variable_name);
     statement->op.variable_declaration.type_name = copy_alloc(type_name);
     statement->op.variable_declaration.value = value;
+    return statement;
+}
+
+statement_t* make_variable_assignment(char* variable_name, expr_t* value) {
+    statement_t* statement = xmalloc(sizeof(statement_t));
+    statement->type = STATEMENT_VARIABLE_ASSIGN;
+    statement->op.variable_assignment.variable_name = copy_alloc(variable_name);
+    statement->op.variable_assignment.value = value;
     return statement;
 }
 

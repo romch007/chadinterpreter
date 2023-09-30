@@ -25,12 +25,12 @@ static token_t* expect(parser_t* parser, token_t* token, token_type_t type) {
     return token;
 }
 
-statement_t* parse(parser_t* parser) {
+statement_t* parse_block(parser_t* parser) {
     statement_t* root = make_block_statement();
 
     for (;;) {
         token_t* token = peek(parser, 0);
-        if (token->type == TOKEN_EOS) break;
+        if (token->type == TOKEN_EOS || token->type == TOKEN_CLOSE_BRACE) break;
 
         statement_t* statement = NULL;
 
@@ -39,17 +39,40 @@ statement_t* parse(parser_t* parser) {
             case TOKEN_CONST:
                 statement = parse_variable_declaration(parser);
                 break;
+            case TOKEN_IDENTIFIER:
+                statement = parse_variable_assignment(parser);
+                break;
+            case TOKEN_IF:
+                statement = parse_if_condition(parser);
+                break;
+            case TOKEN_OPEN_BRACE:
+                expect(parser, advance(parser), TOKEN_OPEN_BRACE);
+                statement = parse_block(parser);
+                expect(parser, advance(parser), TOKEN_CLOSE_BRACE);
+                break;
             default:
                 printf("ERROR: invalid first token %s", token_type_to_string(token->type));
                 abort();
         }
 
-        expect(parser, advance(parser), TOKEN_SEMICOLON);
-
         cvector_push_back(root->op.block.statements, statement);
     }
 
     return root;
+}
+
+statement_t* parse_if_condition(parser_t* parser) {
+    expect(parser, advance(parser), TOKEN_IF);
+
+    expect(parser, advance(parser), TOKEN_OPEN_PAREN);
+    expr_t* condition = parse_expression(parser);
+    expect(parser, advance(parser), TOKEN_CLOSE_PAREN);
+
+    expect(parser, advance(parser), TOKEN_OPEN_BRACE);
+    statement_t* body = parse_block(parser);
+    expect(parser, advance(parser), TOKEN_CLOSE_BRACE);
+
+    return make_if_condition_statement(condition, body);
 }
 
 statement_t* parse_variable_declaration(parser_t* parser) {
@@ -72,7 +95,22 @@ statement_t* parse_variable_declaration(parser_t* parser) {
     // variable value
     expr_t* value = parse_expression(parser);
 
+    expect(parser, advance(parser), TOKEN_SEMICOLON);
+
     return make_variable_declaration(constant, variable_name, type_name, value);
+}
+
+statement_t* parse_variable_assignment(parser_t* parser) {
+    token_t* ident_variable_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
+    char* variable_name = ident_variable_name->value.str;
+
+    expect(parser, advance(parser), TOKEN_EQUAL);
+
+    expr_t* value = parse_expression(parser);
+
+    expect(parser, advance(parser), TOKEN_SEMICOLON);
+
+    return make_variable_assignment(variable_name, value);
 }
 
 expr_t* parse_expression(parser_t* parser) {
@@ -118,6 +156,12 @@ expr_t* parse_term(parser_t* parser) {
             case TOKEN_DIV:
                 op_type = BINARY_OP_DIV;
                 break;
+            case TOKEN_AND:
+                op_type = BINARY_OP_AND;
+                break;
+            case TOKEN_OR:
+                op_type = BINARY_OP_OR;
+                break;
             default:
                 invalid = true;
         }
@@ -136,6 +180,9 @@ expr_t* parse_factor(parser_t* parser) {
     token_t* token = advance(parser);
 
     switch (token->type) {
+        case TOKEN_BOOL_LITERAL:
+            expr = make_bool_literal(token->value.boolean);
+            break;
         case TOKEN_INT_LITERAL:
             expr = make_integer_literal(token->value.integer);
             break;
@@ -154,6 +201,9 @@ expr_t* parse_factor(parser_t* parser) {
             break;
         case TOKEN_MINUS:
             expr = make_unary_op(UNARY_OP_NEG, parse_term(parser));
+            break;
+        case TOKEN_NOT:
+            expr = make_unary_op(UNARY_OP_NOT, parse_term(parser));
             break;
         default:
             printf("ERROR: unexpected token %s", token_type_to_string(token->type));

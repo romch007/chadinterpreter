@@ -1,3 +1,4 @@
-let stuff: int = (-45 / 7) * 9;
-const truc: str = 'salut';
-
+let truth: bool = !(true || true);
+if (truth) {
+    let stuff: int = 4;
+}

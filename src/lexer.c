@@ -8,7 +8,6 @@ static size_t current_pos = 0;
 static char* input = NULL;
 static size_t input_len = 0;
 
-
 static char peek(int advance) {
     if (current_pos + advance < input_len && input[current_pos + advance] != '\0') {
         return input[current_pos + advance];
@@ -69,10 +68,26 @@ cvector_vector_type(token_t) tokenize(char* value) {
             token.type = TOKEN_MUL;
         } else if (c == '/') {
             token.type = TOKEN_DIV;
+        } else if (c == '!') {
+            token.type = TOKEN_NOT;
+        } else if (c == '&') {
+            if (peek(1) == '&') {
+                current_pos++;
+                token.type = TOKEN_AND;
+            }
+        } else if (c == '|') {
+            if (peek(1) == '|') {
+                current_pos++;
+                token.type = TOKEN_OR;
+            }
         } else if (c == '(') {
             token.type = TOKEN_OPEN_PAREN;
         } else if (c == ')') {
             token.type = TOKEN_CLOSE_PAREN;
+        } else if (c == '{') {
+            token.type = TOKEN_OPEN_BRACE;
+        } else if (c == '}') {
+            token.type = TOKEN_CLOSE_BRACE;
         } else if (c == '=') {
             token.type = TOKEN_EQUAL;
         } else if (c == ';') {
@@ -98,14 +113,23 @@ cvector_vector_type(token_t) tokenize(char* value) {
         } else if (is_valid_identifier(c)) {
             size_t start = current_pos;
 
-            while (isalpha(peek(1))) current_pos++;
+            while (is_valid_identifier(peek(1))) current_pos++;
 
             size_t len = (current_pos - start) + 1;
 
-            if (strncmp(&input[start], "let", len) == 0) {
+            // TODO: fix these strncmp (to pass through valgrind)
+            if (strncmp(&input[start], "if", len) == 0) {
+                token.type = TOKEN_IF;
+            } else if (strncmp(&input[start], "let", len) == 0) {
                 token.type = TOKEN_LET;
             } else if (strncmp(&input[start], "const", len) == 0) {
                 token.type = TOKEN_CONST;
+            } else if (strncmp(&input[start], "true", len) == 0) {
+                token.type = TOKEN_BOOL_LITERAL;
+                token.value.boolean = true;
+            } else if (strncmp(&input[start], "false", len) == 0) {
+                token.type = TOKEN_BOOL_LITERAL;
+                token.value.boolean = false;
             } else {
                 token.type = TOKEN_IDENTIFIER;
                 token.value.str = xmalloc(sizeof(char) * len);
