@@ -33,8 +33,9 @@ static void* xrealloc(void* original, const size_t size) {
 }
 
 static char* copy_alloc(char* str) {
-    char* allocated = xmalloc(sizeof(char) * strlen(str));
-    strcpy(allocated, str);
+    size_t len = strlen(str);
+    char* allocated = xmalloc(sizeof(char) * len);
+    memcpy(allocated, str, len);
     return allocated;
 }
 
