@@ -63,13 +63,23 @@ cvector_vector_type(token_t) tokenize(char* value) {
         } else if (c == '+') {
             token.type = TOKEN_PLUS;
         } else if (c == '-') {
-            token.type = TOKEN_MINUS;
+            if (peek(1) == '>') {
+                current_pos++;
+                token.type = TOKEN_ARROW;
+            } else {
+                token.type = TOKEN_MINUS;
+            }
         } else if (c == '*') {
             token.type = TOKEN_MUL;
         } else if (c == '/') {
             token.type = TOKEN_DIV;
         } else if (c == '!') {
-            token.type = TOKEN_NOT;
+            if (peek(1) == '=') {
+                current_pos++;
+                token.type = TOKEN_NOT_EQUAL;
+            } else {
+                token.type = TOKEN_NOT;
+            }
         } else if (c == '&') {
             if (peek(1) == '&') {
                 current_pos++;
@@ -89,11 +99,32 @@ cvector_vector_type(token_t) tokenize(char* value) {
         } else if (c == '}') {
             token.type = TOKEN_CLOSE_BRACE;
         } else if (c == '=') {
-            token.type = TOKEN_EQUAL;
+            if (peek(1) == '=') {
+                current_pos++;
+                token.type = TOKEN_DOUBLE_EQUAL;
+            } else {
+                token.type = TOKEN_EQUAL;
+            }
         } else if (c == ';') {
             token.type = TOKEN_SEMICOLON;
         } else if (c == ':') {
             token.type = TOKEN_COLON;
+        } else if (c == ',') {
+            token.type = TOKEN_COMMA;
+        } else if (c == '<') {
+            if (peek(1) == '=') {
+                current_pos++;
+                token.type = TOKEN_LESS_EQUAL;
+            } else {
+                token.type = TOKEN_LESS;
+            }
+        } else if (c == '>') {
+            if (peek(1) == '=') {
+                current_pos++;
+                token.type = TOKEN_GREATER_EQUAL;
+            } else {
+                token.type = TOKEN_GREATER;
+            }
         } else if (isdigit(c)) {
             size_t start = current_pos;
             char next;
@@ -120,6 +151,10 @@ cvector_vector_type(token_t) tokenize(char* value) {
             // TODO: fix these strncmp (to pass through valgrind)
             if (strncmp(&input[start], "if", len) == 0) {
                 token.type = TOKEN_IF;
+            } else if (strncmp(&input[start], "else", len) == 0) {
+                token.type = TOKEN_ELSE;
+            } else if (strncmp(&input[start], "fn", len) == 0) {
+                token.type = TOKEN_FN;
             } else if (strncmp(&input[start], "let", len) == 0) {
                 token.type = TOKEN_LET;
             } else if (strncmp(&input[start], "const", len) == 0) {
@@ -148,7 +183,7 @@ cvector_vector_type(token_t) tokenize(char* value) {
             current_pos++;
         } else {
             printf("ERROR: invalid character %c", c);
-            abort();
+            exit(1);
         }
 
         if (!ignore)

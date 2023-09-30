@@ -10,7 +10,8 @@ typedef enum {
     EXPR_BOOL_LITERAL,
     EXPR_INT_LITERAL,
     EXPR_STRING_LITERAL,
-    EXPR_VARIABLE_USE
+    EXPR_VARIABLE_USE,
+    EXPR_FUNCTION_CALL,
 } expr_type_t;
 
 typedef enum {
@@ -20,6 +21,12 @@ typedef enum {
     BINARY_OP_DIV,
     BINARY_OP_AND,
     BINARY_OP_OR,
+    BINARY_OP_EQUAL,
+    BINARY_OP_NOT_EQUAL,
+    BINARY_OP_GREATER,
+    BINARY_OP_GREATER_EQUAL,
+    BINARY_OP_LESS,
+    BINARY_OP_LESS_EQUAL,
 } binary_opt_type_t;
 
 typedef enum {
@@ -45,6 +52,10 @@ typedef struct expr {
         struct {
             char* name;
         } variable_use;
+        struct {
+            char* name;
+            cvector_vector_type(struct expr*) arguments;
+        } function_call;
     } op;
 } expr_t;
 
@@ -54,6 +65,7 @@ expr_t* make_bool_literal(bool value);
 expr_t* make_integer_literal(int value);
 expr_t* make_string_literal(char* value);
 expr_t* make_variable_use(char* name);
+expr_t* make_function_call(char* name);
 
 void free_expr(expr_t* expr);
 
@@ -62,6 +74,8 @@ typedef enum {
     STATEMENT_IF_CONDITION,
     STATEMENT_VARIABLE_DECL,
     STATEMENT_VARIABLE_ASSIGN,
+    STATEMENT_NAKED_FN_CALL,
+    STATEMENT_FUNCTION_DEF,
 } statement_type_t;
 
 typedef struct statement {
@@ -73,9 +87,10 @@ typedef struct statement {
         struct {
             expr_t* condition;
             struct statement* body;
+            struct statement* body_else;
         } if_condition;
         struct {
-            bool constant;
+            bool is_constant;
             char* variable_name;
             char* type_name;
             expr_t* value;
@@ -84,6 +99,16 @@ typedef struct statement {
             char* variable_name;
             expr_t* value;
         } variable_assignment;
+        struct {
+            expr_t* function_call;
+        } naked_fn_call;
+        struct {
+            char* name;
+            char* return_type;
+            cvector_vector_type(char*) argument_names;
+            cvector_vector_type(char*) argument_types;
+            struct statement* body;
+        } function_definition;
     } op;
 } statement_t;
 
@@ -91,6 +116,7 @@ statement_t* make_block_statement();
 statement_t* make_if_condition_statement(expr_t* condition, statement_t* body);
 statement_t* make_variable_declaration(bool constant, char* variable_name, char* type_name, expr_t* value);
 statement_t* make_variable_assignment(char* variable_name, expr_t* value);
+statement_t* make_naked_fn_call(expr_t* function_call);
 
 void free_statement(statement_t* statement);
 

@@ -20,7 +20,7 @@ static token_t* expect(parser_t* parser, token_t* token, token_type_t type) {
         token = peek(parser, 0);
     if (token->type != type) {
         printf("ERROR: invalid token type, expected %s but got %s\n", token_type_to_string(type), token_type_to_string(token->type));
-        abort();
+        exit(1);
     }
     return token;
 }
@@ -40,7 +40,12 @@ statement_t* parse_block(parser_t* parser) {
                 statement = parse_variable_declaration(parser);
                 break;
             case TOKEN_IDENTIFIER:
-                statement = parse_variable_assignment(parser);
+                if (peek(parser, 1)->type == TOKEN_OPEN_PAREN) {
+                    statement = make_naked_fn_call(parse_function_call(parser));
+                    expect(parser, advance(parser), TOKEN_SEMICOLON);
+                } else {
+                    statement = parse_variable_assignment(parser);
+                }
                 break;
             case TOKEN_IF:
                 statement = parse_if_condition(parser);
@@ -52,7 +57,7 @@ statement_t* parse_block(parser_t* parser) {
                 break;
             default:
                 printf("ERROR: invalid first token %s", token_type_to_string(token->type));
-                abort();
+                exit(1);
         }
 
         cvector_push_back(root->op.block.statements, statement);
@@ -72,7 +77,17 @@ statement_t* parse_if_condition(parser_t* parser) {
     statement_t* body = parse_block(parser);
     expect(parser, advance(parser), TOKEN_CLOSE_BRACE);
 
-    return make_if_condition_statement(condition, body);
+    statement_t* if_condition = make_if_condition_statement(condition, body);
+
+    if (peek(parser, 0)->type == TOKEN_ELSE) {
+        consume(parser, 1);
+
+        expect(parser, advance(parser), TOKEN_OPEN_BRACE);
+        if_condition->op.if_condition.body_else = parse_block(parser);
+        expect(parser, advance(parser), TOKEN_CLOSE_BRACE);
+    }
+
+    return if_condition;
 }
 
 statement_t* parse_variable_declaration(parser_t* parser) {
@@ -128,6 +143,24 @@ expr_t* parse_expression(parser_t* parser) {
             case TOKEN_MINUS:
                 op_type = BINARY_OP_SUB;
                 break;
+            case TOKEN_DOUBLE_EQUAL:
+                op_type = BINARY_OP_EQUAL;
+                break;
+            case TOKEN_NOT_EQUAL:
+                op_type = BINARY_OP_NOT_EQUAL;
+                break;
+            case TOKEN_GREATER:
+                op_type = BINARY_OP_GREATER;
+                break;
+            case TOKEN_GREATER_EQUAL:
+                op_type = BINARY_OP_GREATER_EQUAL;
+                break;
+            case TOKEN_LESS:
+                op_type = BINARY_OP_LESS;
+                break;
+            case TOKEN_LESS_EQUAL:
+                op_type = BINARY_OP_LESS_EQUAL;
+                break;
             default:
                 invalid = true;
         }
@@ -177,38 +210,71 @@ expr_t* parse_term(parser_t* parser) {
 
 expr_t* parse_factor(parser_t* parser) {
     expr_t* expr;
-    token_t* token = advance(parser);
+    token_t* token = peek(parser, 0);
 
     switch (token->type) {
         case TOKEN_BOOL_LITERAL:
+            consume(parser, 1);
             expr = make_bool_literal(token->value.boolean);
             break;
         case TOKEN_INT_LITERAL:
+            consume(parser, 1);
             expr = make_integer_literal(token->value.integer);
             break;
         case TOKEN_STR_LITERAL:
+            consume(parser, 1);
             expr = make_string_literal(token->value.str);
             break;
         case TOKEN_IDENTIFIER:
-            expr = make_variable_use(token->value.str);
+            if (peek(parser, 1)->type == TOKEN_OPEN_PAREN) {
+                expr = parse_function_call(parser);
+            } else {
+                consume(parser, 1);
+                expr = make_variable_use(token->value.str);
+            }
             break;
         case TOKEN_OPEN_PAREN:
+            consume(parser, 1);
             expr = parse_expression(parser);
             expect(parser, advance(parser), TOKEN_CLOSE_PAREN);
             break;
         case TOKEN_PLUS:
+            consume(parser, 1);
             expr = parse_expression(parser);
             break;
         case TOKEN_MINUS:
+            consume(parser, 1);
             expr = make_unary_op(UNARY_OP_NEG, parse_term(parser));
             break;
         case TOKEN_NOT:
+            consume(parser, 1);
             expr = make_unary_op(UNARY_OP_NOT, parse_term(parser));
             break;
         default:
             printf("ERROR: unexpected token %s", token_type_to_string(token->type));
-            abort();
+            exit(1);
     }
 
     return expr;
+}
+
+expr_t* parse_function_call(parser_t* parser) {
+    token_t* ident_fn_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
+
+    expect(parser, advance(parser), TOKEN_OPEN_PAREN);
+    expr_t* function_call = make_function_call(ident_fn_name->value.str);
+
+    while (peek(parser, 0)->type != TOKEN_CLOSE_PAREN) {
+        expr_t* argument = parse_expression(parser);
+        cvector_push_back(function_call->op.function_call.arguments, argument);
+
+        if (peek(parser, 0)->type != TOKEN_COMMA)
+            break;
+        else
+            consume(parser, 1);
+    }
+
+    expect(parser, advance(parser), TOKEN_CLOSE_PAREN);
+
+    return function_call;
 }

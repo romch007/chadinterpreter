@@ -1,6 +1,5 @@
 #define CVECTOR_LOGARITHMIC_GROWTH
 
-#include "debug.h"
 #include "lexer.h"
 #include "parser.h"
 #include <stdio.h>
@@ -39,4 +38,6 @@ int main(int argc, char** argv) {
     cvector_free(tokens);
 
     free_statement(root);
+
+    return 0;
 }

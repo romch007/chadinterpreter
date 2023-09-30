@@ -18,5 +18,6 @@ statement_t* parse_variable_assignment(parser_t* parser);
 expr_t* parse_expression(parser_t* parser);
 expr_t* parse_term(parser_t* parser);
 expr_t* parse_factor(parser_t* parser);
+expr_t* parse_function_call(parser_t* parser);
 
 #endif
