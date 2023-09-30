@@ -31,18 +31,14 @@ expr_t* make_integer_literal(int value) {
 expr_t* make_string_literal(char* value) {
     expr_t* expr = xmalloc(sizeof(expr_t));
     expr->type = EXPR_STRING_LITERAL;
-    char* in_value = xmalloc(sizeof(char) * strlen(value));
-    strcpy(in_value, value);
-    expr->op.string_literal = in_value;
+    expr->op.string_literal = copy_alloc(value);
     return expr;
 }
 
 expr_t* make_variable_use(char* name) {
     expr_t* expr = xmalloc(sizeof(expr_t));
     expr->type = EXPR_VARIABLE_USE;
-    char* in_name = xmalloc(sizeof(char) * strlen(name));
-    strcpy(in_name, name);
-    expr->op.variable_use.name = in_name;
+    expr->op.variable_use.name = copy_alloc(name);
     return expr;
 }
 
@@ -80,13 +76,12 @@ statement_t* make_block_statement() {
     return statement;
 }
 
-statement_t* make_variable_declaration(bool constant, char* variable_name, expr_t* value) {
+statement_t* make_variable_declaration(bool constant, char* variable_name, char* type_name, expr_t* value) {
     statement_t* statement = xmalloc(sizeof(statement_t));
     statement->type = STATEMENT_VARIABLE_DECL;
     statement->op.variable_declaration.constant = constant;
-    char* in_variable_name = xmalloc(sizeof(char) * strlen(variable_name));
-    strcpy(in_variable_name, variable_name);
-    statement->op.variable_declaration.variable_name = in_variable_name;
+    statement->op.variable_declaration.variable_name = copy_alloc(variable_name);
+    statement->op.variable_declaration.type_name = copy_alloc(type_name);
     statement->op.variable_declaration.value = value;
     return statement;
 }

@@ -69,6 +69,7 @@ typedef struct statement {
         struct {
             bool constant;
             char* variable_name;
+            char* type_name;
             expr_t* value;
         } variable_declaration;
     } op;
@@ -76,7 +77,7 @@ typedef struct statement {
 
 statement_t* make_block_statement();
 
-statement_t* make_variable_declaration(bool constant, char* variable_name, expr_t* value);
+statement_t* make_variable_declaration(bool constant, char* variable_name, char* type_name, expr_t* value);
 
 void free_statement(statement_t* statement);
 

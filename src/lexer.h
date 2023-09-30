@@ -5,20 +5,8 @@
 #include <stddef.h>
 
 typedef enum {
-    TOKEN_IDENTIFIER,
-    TOKEN_LET,
-    TOKEN_CONST,
-    TOKEN_PLUS,
-    TOKEN_MINUS,
-    TOKEN_MUL,
-    TOKEN_DIV,
-    TOKEN_EQUAL,
-    TOKEN_OPEN_PAREN,
-    TOKEN_CLOSE_PAREN,
-    TOKEN_INT_LITERAL,
-    TOKEN_STR_LITERAL,
-    TOKEN_SEMICOLON,
-    TOKEN_EOS
+#define PNS_INTERPRETER_TOKEN(X) TOKEN_##X,
+#include "tokens.h"
 } token_type_t;
 
 typedef struct {

@@ -28,8 +28,10 @@ static token_t* expect(parser_t* parser, token_t* token, token_type_t type) {
 statement_t* parse(parser_t* parser) {
     statement_t* root = make_block_statement();
 
-    do {
+    for (;;) {
         token_t* token = peek(parser, 0);
+        if (token->type == TOKEN_EOS) break;
+
         statement_t* statement = NULL;
 
         switch (token->type) {
@@ -42,26 +44,35 @@ statement_t* parse(parser_t* parser) {
                 abort();
         }
 
+        expect(parser, advance(parser), TOKEN_SEMICOLON);
+
         cvector_push_back(root->op.block.statements, statement);
-    } while (advance(parser)->type == TOKEN_EOS);
+    }
 
     return root;
 }
 
 statement_t* parse_variable_declaration(parser_t* parser) {
+    // let/const
     token_t* decl_op = advance(parser);
     bool constant = decl_op->type == TOKEN_CONST;
 
-    token_t* ident = expect(parser, advance(parser), TOKEN_IDENTIFIER);
-    char* variable_name = ident->value.str;
+    // variable name
+    token_t* ident_variable_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
+    char* variable_name = ident_variable_name->value.str;
 
+    // type info
+    expect(parser, advance(parser), TOKEN_COLON);
+    token_t* ident_type_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
+    char* type_name = ident_type_name->value.str;
+
+    // equal sign
     expect(parser, advance(parser), TOKEN_EQUAL);
 
+    // variable value
     expr_t* value = parse_expression(parser);
 
-    expect(parser, advance(parser), TOKEN_SEMICOLON);
-
-    return make_variable_declaration(constant, variable_name, value);
+    return make_variable_declaration(constant, variable_name, type_name, value);
 }
 
 expr_t* parse_expression(parser_t* parser) {
@@ -122,27 +133,26 @@ expr_t* parse_term(parser_t* parser) {
 
 expr_t* parse_factor(parser_t* parser) {
     expr_t* expr;
-    token_t* token = peek(parser, 0);
+    token_t* token = advance(parser);
 
     switch (token->type) {
         case TOKEN_INT_LITERAL:
-            consume(parser, 1);
             expr = make_integer_literal(token->value.integer);
+            break;
+        case TOKEN_STR_LITERAL:
+            expr = make_string_literal(token->value.str);
             break;
         case TOKEN_IDENTIFIER:
             expr = make_variable_use(token->value.str);
             break;
         case TOKEN_OPEN_PAREN:
-            consume(parser, 1);
             expr = parse_expression(parser);
             expect(parser, advance(parser), TOKEN_CLOSE_PAREN);
             break;
         case TOKEN_PLUS:
-            consume(parser, 1);
             expr = parse_expression(parser);
             break;
         case TOKEN_MINUS:
-            consume(parser, 1);
             expr = make_unary_op(UNARY_OP_NEG, parse_term(parser));
             break;
         default:

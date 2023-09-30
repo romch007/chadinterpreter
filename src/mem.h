@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 static void* xmalloc(const size_t size) {
     void* ptr = malloc(size);
@@ -29,6 +30,12 @@ static void* xrealloc(void* original, const size_t size) {
         abort();
     }
     return ptr;
+}
+
+static char* copy_alloc(char* str) {
+    char* allocated = xmalloc(sizeof(char) * strlen(str));
+    strcpy(allocated, str);
+    return allocated;
 }
 
 #endif

@@ -77,6 +77,8 @@ cvector_vector_type(token_t) tokenize(char* value) {
             token.type = TOKEN_EQUAL;
         } else if (c == ';') {
             token.type = TOKEN_SEMICOLON;
+        } else if (c == ':') {
+            token.type = TOKEN_COLON;
         } else if (isdigit(c)) {
             size_t start = current_pos;
             char next;
@@ -136,36 +138,10 @@ cvector_vector_type(token_t) tokenize(char* value) {
 
 char* token_type_to_string(token_type_t type) {
     switch (type) {
-        case TOKEN_IDENTIFIER:
-            return "IDENTIFIER";
-        case TOKEN_PLUS:
-            return "PLUS";
-        case TOKEN_MINUS:
-            return "MINUS";
-        case TOKEN_MUL:
-            return "MUL";
-        case TOKEN_DIV:
-            return "DIV";
-        case TOKEN_INT_LITERAL:
-            return "EXPR_INT_LITERAL";
-        case TOKEN_STR_LITERAL:
-            return "STR_LITERAL";
-        case TOKEN_EOS:
-            return "EOS";
-        case TOKEN_OPEN_PAREN:
-            return "OPEN_PAREN";
-        case TOKEN_CLOSE_PAREN:
-            return "CLOSE_PAREN";
-        case TOKEN_CONST:
-            return "CONST";
-        case TOKEN_LET:
-            return "LET";
-        case TOKEN_EQUAL:
-            return "EQUAL";
-        case TOKEN_SEMICOLON:
-            return "SEMICOLON";
-        default:
-            return "<UNKNOWN>";
+#define PNS_INTERPRETER_TOKEN(X) \
+    case TOKEN_##X:              \
+        return #X;
+#include "tokens.h"
     }
 }
 

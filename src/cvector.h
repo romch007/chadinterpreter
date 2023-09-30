@@ -7,10 +7,10 @@
 #ifndef CVECTOR_H_
 #define CVECTOR_H_
 
+#include "mem.h"
 #include <assert.h> /* for assert */
 #include <stdlib.h> /* for malloc/realloc/free */
 #include <string.h> /* for memcpy/memmove */
-#include "mem.h"
 
 /* cvector heap implemented using C library malloc() */
 

@@ -1,17 +1,17 @@
 #define CVECTOR_LOGARITHMIC_GROWTH
 
+#include "debug.h"
 #include "lexer.h"
 #include "parser.h"
-#include "debug.h"
 #include <stdio.h>
 
 static char* read_file_content(char* filename) {
     FILE* file = fopen(filename, "r");
     fseek(file, 0, SEEK_END);
     long fsize = ftell(file);
-    fseek(file, 0, SEEK_SET);  /* same as rewind(f); */
+    fseek(file, 0, SEEK_SET); /* same as rewind(f); */
 
-    char *string = malloc(fsize + 1);
+    char* string = malloc(fsize + 1);
     fread(string, fsize, 1, file);
     fclose(file);
 
@@ -28,6 +28,7 @@ int main(int argc, char** argv) {
 
     char* content = read_file_content(argv[1]);
     cvector_vector_type(token_t) tokens = tokenize(content);
+    print_tokens(tokens);
 
     parser_t parser = {
             .token_index = 0,
@@ -36,8 +37,6 @@ int main(int argc, char** argv) {
     };
     statement_t* root = parse(&parser);
     cvector_free(tokens);
-
-    print_expression(root->op.block.statements[0]->op.variable_declaration.value, 0);
 
     free_statement(root);
 }
