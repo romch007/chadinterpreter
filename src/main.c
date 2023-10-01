@@ -27,6 +27,7 @@ int main(int argc, char** argv) {
 
     char* content = read_file_content(argv[1]);
     cvector_vector_type(token_t) tokens = tokenize(content);
+    free(content);
     print_tokens(tokens);
 
     parser_t parser = {
