@@ -107,6 +107,7 @@ typedef struct statement {
         struct {
             bool is_constant;
             char* variable_name;
+            char* type_name;
             expr_t* value;
         } variable_declaration;
         struct {
@@ -125,7 +126,7 @@ typedef struct statement {
 
 statement_t* make_block_statement();
 statement_t* make_if_condition_statement(expr_t* condition, statement_t* body);
-statement_t* make_variable_declaration(bool constant, char* variable_name, expr_t* value);
+statement_t* make_variable_declaration(bool constant, char* variable_name);
 statement_t* make_variable_assignment(char* variable_name, expr_t* value);
 statement_t* make_naked_fn_call(expr_t* function_call);
 statement_t* make_while_loop(expr_t* condition, statement_t* body);

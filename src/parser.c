@@ -94,23 +94,33 @@ statement_t* parse_if_condition(parser_t* parser) {
 }
 
 statement_t* parse_variable_declaration(parser_t* parser) {
-    // let/const
     token_t* decl_op = advance(parser);
     bool constant = decl_op->type == TOKEN_CONST;
 
-    // variable name
     token_t* ident_variable_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
     char* variable_name = ident_variable_name->value.str;
 
-    // equal sign
-    expect(parser, advance(parser), TOKEN_EQUAL);
+    statement_t* variable_declaration = make_variable_declaration(constant, variable_name);
 
-    // variable content
-    expr_t* value = parse_expression(parser);
+    if (peek(parser, 0)->type == TOKEN_COLON) {
+        // There is a type
+        consume(parser, 1);
+
+        token_t* ident_type_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
+
+        variable_declaration->op.variable_declaration.type_name = copy_alloc(ident_type_name->value.str);
+    }
+
+    if (peek(parser, 0)->type == TOKEN_EQUAL) {
+        // There is a default value
+        consume(parser, 1);
+
+        variable_declaration->op.variable_declaration.value = parse_expression(parser);
+    }
 
     expect(parser, advance(parser), TOKEN_SEMICOLON);
 
-    return make_variable_declaration(constant, variable_name, value);
+    return variable_declaration;
 }
 
 statement_t* parse_variable_assignment(parser_t* parser) {

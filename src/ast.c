@@ -120,12 +120,13 @@ statement_t* make_if_condition_statement(expr_t* condition, statement_t* body) {
     return statement;
 }
 
-statement_t* make_variable_declaration(bool constant, char* variable_name, expr_t* value) {
+statement_t* make_variable_declaration(bool constant, char* variable_name) {
     statement_t* statement = xmalloc(sizeof(statement_t));
     statement->type = STATEMENT_VARIABLE_DECL;
     statement->op.variable_declaration.is_constant = constant;
     statement->op.variable_declaration.variable_name = copy_alloc(variable_name);
-    statement->op.variable_declaration.value = value;
+    statement->op.variable_declaration.type_name = NULL;
+    statement->op.variable_declaration.value = NULL;
     return statement;
 }
 
@@ -162,6 +163,7 @@ void destroy_statement(statement_t* statement) {
             break;
         case STATEMENT_VARIABLE_DECL:
             free(statement->op.variable_declaration.variable_name);
+            free(statement->op.variable_declaration.type_name);
             destroy_expr(statement->op.variable_declaration.value);
             break;
         case STATEMENT_IF_CONDITION:

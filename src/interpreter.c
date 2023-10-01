@@ -28,7 +28,7 @@ void dump_context(context_t* context) {
         printf("%s: %s = ", variable->name, runtime_type_to_string(variable->content.type));
         switch (variable->content.type) {
             case RUNTIME_TYPE_STRING:
-                printf("%s\n", variable->content.value.string);
+                printf("%s\n", variable->content.value.string ? variable->content.value.string : "(empty)");
                 break;
             case RUNTIME_TYPE_INTEGER:
                 printf("%d\n", variable->content.value.integer);
@@ -65,7 +65,6 @@ void execute_statement(context_t* context, statement_t* statement) {
             statement_t** it;
             for (it = cvector_begin(statements); it != cvector_end(statements); ++it) {
                 statement_t* current_statement = *it;
-
                 execute_statement(context, current_statement);
             }
 
@@ -74,8 +73,40 @@ void execute_statement(context_t* context, statement_t* statement) {
         case STATEMENT_VARIABLE_DECL: {
             runtime_variable_t variable = {
                     .name = copy_alloc(statement->op.variable_declaration.variable_name),
-                    .content = evaluate_expr(context, statement->op.variable_declaration.value),
-                    .is_constant = statement->op.variable_declaration.is_constant};
+                    .is_constant = statement->op.variable_declaration.is_constant,
+            };
+
+            char* type_name = statement->op.variable_declaration.type_name;
+
+            if (type_name != NULL) {
+                runtime_type_t default_value_type = string_to_runtime_type(type_name);
+
+                if (default_value_type == -1) {
+                    printf("ERROR: invalid type '%s'\n", type_name);
+                    exit(EXIT_FAILURE);
+                }
+
+                variable.content.type = default_value_type;
+
+                switch (default_value_type) {
+                    case RUNTIME_TYPE_STRING:
+                        variable.content.value.string = NULL;
+                        break;
+                    case RUNTIME_TYPE_INTEGER:
+                        variable.content.value.integer = 0;
+                        break;
+                    case RUNTIME_TYPE_FLOAT:
+                        variable.content.value.floating = 0.0;
+                        break;
+                    case RUNTIME_TYPE_BOOLEAN:
+                        variable.content.value.boolean = false;
+                        break;
+                }
+            } else {
+                runtime_value_t default_value = evaluate_expr(context, statement->op.variable_declaration.value);
+
+                variable.content = default_value;
+            }
 
             hashmap_set(context->variables, &variable);
             break;
@@ -172,6 +203,11 @@ runtime_value_t evaluate_expr(context_t* context, expr_t* expr) {
             char* variable_name = expr->op.variable_use.name;
 
             const runtime_variable_t* variable = hashmap_get(context->variables, &(runtime_variable_t){.name = variable_name});
+
+            if (variable == NULL) {
+                printf("ERROR: cannot find variable '%s'\n", variable_name);
+                exit(EXIT_FAILURE);
+            }
 
             return variable->content;
         }
@@ -286,8 +322,7 @@ runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type,
         }
 
         runtime_value_t result_value = {
-                .type = RUNTIME_TYPE_BOOLEAN
-        };
+                .type = RUNTIME_TYPE_BOOLEAN};
 
         if (value_type == RUNTIME_TYPE_INTEGER) {
             // Comparison operations with integers
@@ -384,7 +419,7 @@ runtime_value_t evaluate_unary_op(context_t* context, unary_op_type_t op_type, e
 
 runtime_type_t string_to_runtime_type(char* str) {
 #define PNS_INTERPRETER_RUNTIME_TYPE(A, B) \
-    if (strcmp(str, #B)) {                 \
+    if (strcmp(str, #B) == 0) {                 \
         return RUNTIME_TYPE_##A;           \
     }
 #include "runtime_types.h"
