@@ -121,9 +121,16 @@ void execute_statement(context_t* context, statement_t* statement) {
                 exit(EXIT_FAILURE);
             }
 
+            runtime_value_t new_content = evaluate_expr(context, statement->op.variable_assignment.value);
+
+            if (old_variable->content.type != new_content.type) {
+                printf("ERROR: cannot assign value of type %s to variable '%s' of type %s\n", runtime_type_to_string(new_content.type), variable_name, runtime_type_to_string(old_variable->content.type));
+                exit(EXIT_FAILURE);
+            }
+
             runtime_variable_t variable = {
                     .name = old_variable->name,
-                    .content = evaluate_expr(context, statement->op.variable_assignment.value),
+                    .content = new_content,
                     .is_constant = false,
             };
 
