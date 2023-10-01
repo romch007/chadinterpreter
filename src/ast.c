@@ -5,13 +5,13 @@
 #include "mem.h"
 
 static void vector_statement_deleter(void* element) {
-    statement_t* statement = (statement_t*) &element;
-    free_statement(statement);
+    statement_t* statement = *(void **) element;
+    destroy_statement(statement);
 }
 
 static void vector_expr_deleter(void* element) {
-    expr_t* expr = (expr_t*) &element;
-    free_expr(expr);
+    expr_t* expr = *(void**) element;
+    destroy_expr(expr);
 }
 
 expr_t* make_binary_op(binary_opt_type_t type, expr_t* lhs, expr_t* rhs) {
@@ -67,7 +67,7 @@ expr_t* make_function_call(char* name) {
     return expr;
 }
 
-void free_expr(expr_t* expr) {
+void destroy_expr(expr_t* expr) {
     if (expr == NULL) return;
 
     switch (expr->type) {
@@ -75,15 +75,11 @@ void free_expr(expr_t* expr) {
             free(expr->op.string_literal);
             break;
         case EXPR_BINARY_OPT:
-            free_expr(expr->op.binary.lhs);
-            free(expr->op.binary.lhs);
-
-            free_expr(expr->op.binary.rhs);
-            free(expr->op.binary.rhs);
+            destroy_expr(expr->op.binary.lhs);
+            destroy_expr(expr->op.binary.rhs);
             break;
         case EXPR_UNARY_OPT:
-            free_expr(expr->op.unary.arg);
-            free(expr->op.unary.arg);
+            destroy_expr(expr->op.unary.arg);
             break;
         case EXPR_VARIABLE_USE:
             free(expr->op.variable_use.name);
@@ -96,6 +92,8 @@ void free_expr(expr_t* expr) {
         default:
             break;
     }
+
+    free(expr);
 }
 
 
@@ -139,8 +137,8 @@ statement_t* make_naked_fn_call(expr_t* function_call) {
     return statement;
 }
 
-void free_statement(statement_t* statement) {
-    if (statement == NULL) return;
+void destroy_statement(statement_t* statement) {
+   if (statement == NULL) return;
 
     switch (statement->type) {
         case STATEMENT_BLOCK:
@@ -150,30 +148,24 @@ void free_statement(statement_t* statement) {
         case STATEMENT_VARIABLE_DECL:
             free(statement->op.variable_declaration.variable_name);
 
-            free_expr(statement->op.variable_declaration.value);
-            free(statement->op.variable_declaration.value);
+            destroy_expr(statement->op.variable_declaration.value);
             break;
         case STATEMENT_IF_CONDITION:
-            free_expr(statement->op.if_condition.condition);
-            free(statement->op.if_condition.condition);
-
-            free_statement(statement->op.if_condition.body);
-            free(statement->op.if_condition.body);
-
-            free_statement(statement->op.if_condition.body_else);
-            free(statement->op.if_condition.body_else);
+            destroy_expr(statement->op.if_condition.condition);
+            destroy_statement(statement->op.if_condition.body);
+            destroy_statement(statement->op.if_condition.body_else);
             break;
         case STATEMENT_VARIABLE_ASSIGN:
             free(statement->op.variable_assignment.variable_name);
-
-            free_expr(statement->op.variable_assignment.value);
-            free(statement->op.variable_assignment.value);
+            destroy_expr(statement->op.variable_assignment.value);
             break;
         case STATEMENT_NAKED_FN_CALL:
-            free_expr(statement->op.naked_fn_call.function_call);
+            destroy_expr(statement->op.naked_fn_call.function_call);
             free(statement->op.naked_fn_call.function_call);
             break;
         default:
             break;
     }
+
+    free(statement);
 }

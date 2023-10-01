@@ -67,7 +67,7 @@ expr_t* make_string_literal(char* value);
 expr_t* make_variable_use(char* name);
 expr_t* make_function_call(char* name);
 
-void free_expr(expr_t* expr);
+void destroy_expr(expr_t* expr);
 
 typedef enum {
     STATEMENT_BLOCK,
@@ -118,6 +118,6 @@ statement_t* make_variable_declaration(bool constant, char* variable_name, char*
 statement_t* make_variable_assignment(char* variable_name, expr_t* value);
 statement_t* make_naked_fn_call(expr_t* function_call);
 
-void free_statement(statement_t* statement);
+void destroy_statement(statement_t* statement);
 
 #endif

@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
     cvector_set_elem_destructor(tokens, vector_token_deleter);
     cvector_free(tokens);
 
-    free_statement(root);
+    destroy_statement(root);
 
     return 0;
 }
