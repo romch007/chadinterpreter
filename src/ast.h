@@ -75,6 +75,7 @@ typedef enum {
     STATEMENT_VARIABLE_DECL,
     STATEMENT_VARIABLE_ASSIGN,
     STATEMENT_NAKED_FN_CALL,
+    STATEMENT_WHILE_LOOP,
     STATEMENT_FUNCTION_DEF,
 } statement_type_t;
 
@@ -103,6 +104,10 @@ typedef struct statement {
             expr_t* function_call;
         } naked_fn_call;
         struct {
+            expr_t* condition;
+            struct statement* body;
+        } while_loop;
+        struct {
             char* name;
             char* return_type;
             cvector_vector_type(char*) argument_names;
@@ -117,6 +122,7 @@ statement_t* make_if_condition_statement(expr_t* condition, statement_t* body);
 statement_t* make_variable_declaration(bool constant, char* variable_name, char* type_name, expr_t* value);
 statement_t* make_variable_assignment(char* variable_name, expr_t* value);
 statement_t* make_naked_fn_call(expr_t* function_call);
+statement_t* make_while_loop(expr_t* condition, statement_t* body);
 
 void destroy_statement(statement_t* statement);
 

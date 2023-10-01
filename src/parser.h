@@ -14,6 +14,7 @@ statement_t* parse_block(parser_t* parser);
 statement_t* parse_if_condition(parser_t* parser);
 statement_t* parse_variable_declaration(parser_t* parser);
 statement_t* parse_variable_assignment(parser_t* parser);
+statement_t* parse_while_loop(parser_t* parser);
 
 expr_t* parse_expression(parser_t* parser);
 expr_t* parse_term(parser_t* parser);

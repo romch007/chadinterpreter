@@ -152,6 +152,8 @@ cvector_vector_type(token_t) tokenize(char* value) {
                 token.type = TOKEN_IF;
             } else if (strncmp(&input[start], "else", len) == 0) {
                 token.type = TOKEN_ELSE;
+            } else if (strncmp(&input[start], "while", len) == 0) {
+                token.type = TOKEN_WHILE;
             } else if (strncmp(&input[start], "fn", len) == 0) {
                 token.type = TOKEN_FN;
             } else if (strncmp(&input[start], "let", len) == 0) {

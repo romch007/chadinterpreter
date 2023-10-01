@@ -50,6 +50,9 @@ statement_t* parse_block(parser_t* parser) {
             case TOKEN_IF:
                 statement = parse_if_condition(parser);
                 break;
+            case TOKEN_WHILE:
+                statement = parse_while_loop(parser);
+                break;
             case TOKEN_OPEN_BRACE:
                 expect(parser, advance(parser), TOKEN_OPEN_BRACE);
                 statement = parse_block(parser);
@@ -126,6 +129,20 @@ statement_t* parse_variable_assignment(parser_t* parser) {
     expect(parser, advance(parser), TOKEN_SEMICOLON);
 
     return make_variable_assignment(variable_name, value);
+}
+
+statement_t* parse_while_loop(parser_t* parser) {
+    expect(parser, advance(parser), TOKEN_WHILE);
+
+    expect(parser, advance(parser), TOKEN_OPEN_PAREN);
+    expr_t* condition = parse_expression(parser);
+    expect(parser, advance(parser), TOKEN_CLOSE_PAREN);
+
+    expect(parser, advance(parser), TOKEN_OPEN_BRACE);
+    statement_t* body = parse_block(parser);
+    expect(parser, advance(parser), TOKEN_CLOSE_BRACE);
+
+    return make_while_loop(condition, body);
 }
 
 expr_t* parse_expression(parser_t* parser) {

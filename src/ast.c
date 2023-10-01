@@ -138,6 +138,14 @@ statement_t* make_naked_fn_call(expr_t* function_call) {
     return statement;
 }
 
+statement_t* make_while_loop(expr_t* condition, statement_t* body) {
+    statement_t* statement = xmalloc(sizeof(statement_t));
+    statement->type = STATEMENT_WHILE_LOOP;
+    statement->op.while_loop.condition = condition;
+    statement->op.while_loop.body = body;
+    return statement;
+}
+
 void destroy_statement(statement_t* statement) {
    if (statement == NULL) return;
 
@@ -162,7 +170,10 @@ void destroy_statement(statement_t* statement) {
             break;
         case STATEMENT_NAKED_FN_CALL:
             destroy_expr(statement->op.naked_fn_call.function_call);
-            free(statement->op.naked_fn_call.function_call);
+            break;
+        case STATEMENT_WHILE_LOOP:
+            destroy_expr(statement->op.while_loop.condition);
+            destroy_statement(statement->op.while_loop.body);
             break;
         default:
             break;
