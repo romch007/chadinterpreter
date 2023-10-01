@@ -39,7 +39,7 @@ static char* copy_alloc(const char* str) {
     return allocated;
 }
 
-static char* extract_substr(char* str, size_t start, size_t len) {
+static char* extract_substr(const char* str, size_t start, size_t len) {
     char* substr = xmalloc(sizeof(char) * (len + 1));
     memcpy(substr, &str[start], len);
     substr[len] = '\0';
