@@ -2,8 +2,8 @@
 #define PNS_INTERPRETER_LEXER_H
 
 #include "cvector.h"
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 typedef enum {
 #define PNS_INTERPRETER_TOKEN(X) TOKEN_##X,

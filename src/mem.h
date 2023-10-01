@@ -32,11 +32,18 @@ static void* xrealloc(void* original, const size_t size) {
     return ptr;
 }
 
-static char* copy_alloc(char* str) {
+static char* copy_alloc(const char* str) {
     size_t len = strlen(str);
-    char* allocated = xmalloc(sizeof(char) * len);
-    memcpy(allocated, str, len);
+    char* allocated = xmalloc(sizeof(char) * (len + 1));
+    memcpy(allocated, str, len + 1);
     return allocated;
+}
+
+static char* extract_substr(char* str, size_t start, size_t len) {
+    char* substr = xmalloc(sizeof(char) * (len + 1));
+    memcpy(substr, &str[start], len);
+    substr[len] = '\0';
+    return substr;
 }
 
 #endif

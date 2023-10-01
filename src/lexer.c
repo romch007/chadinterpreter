@@ -135,9 +135,7 @@ cvector_vector_type(token_t) tokenize(char* value) {
 
             size_t len = (current_pos - start) + 1;
 
-            char* substr = xmalloc(sizeof(char) * (len + 1));
-            memcpy(substr, &input[start], len);
-            substr[len] = '\0';
+            char* substr = extract_substr(input, start, len);
 
             if (floating_point) {
                 token.type = TOKEN_FLOAT_LITERAL;
@@ -154,32 +152,34 @@ cvector_vector_type(token_t) tokenize(char* value) {
             while (is_valid_identifier(peek(1))) current_pos++;
 
             size_t len = (current_pos - start) + 1;
+            char* substr = extract_substr(input, start, len);
+            bool keep = false;
 
-            // TODO: fix these strncmp (to pass through valgrind)
-            if (strncmp(&input[start], "if", len) == 0) {
+            if (strcmp(substr, "if") == 0) {
                 token.type = TOKEN_IF;
-            } else if (strncmp(&input[start], "else", len) == 0) {
+            } else if (strcmp(substr, "else") == 0) {
                 token.type = TOKEN_ELSE;
-            } else if (strncmp(&input[start], "while", len) == 0) {
+            } else if (strcmp(substr, "while") == 0) {
                 token.type = TOKEN_WHILE;
-            } else if (strncmp(&input[start], "fn", len) == 0) {
+            } else if (strcmp(substr, "fn") == 0) {
                 token.type = TOKEN_FN;
-            } else if (strncmp(&input[start], "let", len) == 0) {
+            } else if (strcmp(substr, "let") == 0) {
                 token.type = TOKEN_LET;
-            } else if (strncmp(&input[start], "const", len) == 0) {
+            } else if (strcmp(substr, "const") == 0) {
                 token.type = TOKEN_CONST;
-            } else if (strncmp(&input[start], "true", len) == 0) {
+            } else if (strcmp(substr, "true") == 0) {
                 token.type = TOKEN_BOOL_LITERAL;
                 token.value.boolean = true;
-            } else if (strncmp(&input[start], "false", len) == 0) {
+            } else if (strcmp(substr, "false") == 0) {
                 token.type = TOKEN_BOOL_LITERAL;
                 token.value.boolean = false;
             } else {
                 token.type = TOKEN_IDENTIFIER;
-                token.value.str = xmalloc(sizeof(char) * (len + 1));
-                strncpy(token.value.str, &input[start], len);
-                token.value.str[len] = '\0';
+                token.value.str = substr;
+                keep = true;
             }
+
+            if (!keep) free(substr);
         } else if (c == '\'') {
             size_t start = current_pos;
 
@@ -188,13 +188,11 @@ cvector_vector_type(token_t) tokenize(char* value) {
 
             size_t len = (current_pos - start) + 1;
             token.type = TOKEN_STR_LITERAL;
-            token.value.str = xmalloc(sizeof(char) * (len + 1));
-            strncpy(token.value.str, &input[start], len);
-            token.value.str[len] = '\0';
+            token.value.str = extract_substr(input, start, len);
             current_pos++;
         } else {
             printf("ERROR: invalid character %c", c);
-            exit(1);
+            exit(EXIT_FAILURE);
         }
 
         if (!ignore)

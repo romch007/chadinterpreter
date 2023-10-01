@@ -5,7 +5,7 @@
 #include "mem.h"
 
 static void vector_statement_deleter(void* element) {
-    statement_t* statement = *(void **) element;
+    statement_t* statement = *(void**) element;
     destroy_statement(statement);
 }
 
@@ -120,12 +120,11 @@ statement_t* make_if_condition_statement(expr_t* condition, statement_t* body) {
     return statement;
 }
 
-statement_t* make_variable_declaration(bool constant, char* variable_name, char* type_name, expr_t* value) {
+statement_t* make_variable_declaration(bool constant, char* variable_name, expr_t* value) {
     statement_t* statement = xmalloc(sizeof(statement_t));
     statement->type = STATEMENT_VARIABLE_DECL;
     statement->op.variable_declaration.is_constant = constant;
     statement->op.variable_declaration.variable_name = copy_alloc(variable_name);
-    statement->op.variable_declaration.type_name = copy_alloc(type_name);
     statement->op.variable_declaration.value = value;
     return statement;
 }
@@ -154,7 +153,7 @@ statement_t* make_while_loop(expr_t* condition, statement_t* body) {
 }
 
 void destroy_statement(statement_t* statement) {
-   if (statement == NULL) return;
+    if (statement == NULL) return;
 
     switch (statement->type) {
         case STATEMENT_BLOCK:
@@ -163,7 +162,6 @@ void destroy_statement(statement_t* statement) {
             break;
         case STATEMENT_VARIABLE_DECL:
             free(statement->op.variable_declaration.variable_name);
-            free(statement->op.variable_declaration.type_name);
             destroy_expr(statement->op.variable_declaration.value);
             break;
         case STATEMENT_IF_CONDITION:

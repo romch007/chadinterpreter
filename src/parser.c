@@ -20,7 +20,7 @@ static token_t* expect(parser_t* parser, token_t* token, token_type_t type) {
         token = peek(parser, 0);
     if (token->type != type) {
         printf("ERROR: invalid token type, expected %s but got %s\n", token_type_to_string(type), token_type_to_string(token->type));
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     return token;
 }
@@ -60,7 +60,7 @@ statement_t* parse_block(parser_t* parser) {
                 break;
             default:
                 printf("ERROR: invalid first token %s", token_type_to_string(token->type));
-                exit(1);
+                exit(EXIT_FAILURE);
         }
 
         cvector_push_back(root->op.block.statements, statement);
@@ -102,11 +102,6 @@ statement_t* parse_variable_declaration(parser_t* parser) {
     token_t* ident_variable_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
     char* variable_name = ident_variable_name->value.str;
 
-    // type info
-    expect(parser, advance(parser), TOKEN_COLON);
-    token_t* ident_type_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
-    char* type_name = ident_type_name->value.str;
-
     // equal sign
     expect(parser, advance(parser), TOKEN_EQUAL);
 
@@ -115,7 +110,7 @@ statement_t* parse_variable_declaration(parser_t* parser) {
 
     expect(parser, advance(parser), TOKEN_SEMICOLON);
 
-    return make_variable_declaration(constant, variable_name, type_name, value);
+    return make_variable_declaration(constant, variable_name, value);
 }
 
 statement_t* parse_variable_assignment(parser_t* parser) {
@@ -273,7 +268,7 @@ expr_t* parse_factor(parser_t* parser) {
             break;
         default:
             printf("ERROR: unexpected token %s", token_type_to_string(token->type));
-            exit(1);
+            exit(EXIT_FAILURE);
     }
 
     return expr;

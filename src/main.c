@@ -1,5 +1,8 @@
 #define CVECTOR_LOGARITHMIC_GROWTH
 
+#include "hashmap.h"
+#include "mem.h"
+#include "interpreter.h"
 #include "lexer.h"
 #include "parser.h"
 #include <stdio.h>
@@ -10,7 +13,7 @@ static char* read_file_content(char* filename) {
     long fsize = ftell(file);
     fseek(file, 0, SEEK_SET); /* same as rewind(f); */
 
-    char* string = malloc(fsize + 1);
+    char* string = xmalloc(fsize + 1);
     fread(string, fsize, 1, file);
     fclose(file);
 
@@ -20,16 +23,21 @@ static char* read_file_content(char* filename) {
 }
 
 int main(int argc, char** argv) {
+    hashmap_set_allocator(&xmalloc, &free);
+
     if (argc < 2) {
         printf("ERROR: no file specified\n");
         return 1;
     }
 
     char* content = read_file_content(argv[1]);
+
+    // Lexing
     cvector_vector_type(token_t) tokens = tokenize(content);
     free(content);
-    print_tokens(tokens);
+    // print_tokens(tokens);
 
+    // Parsing
     parser_t parser = {
             .token_index = 0,
             .tokens = tokens,
@@ -40,7 +48,13 @@ int main(int argc, char** argv) {
     cvector_set_elem_destructor(tokens, vector_token_deleter);
     cvector_free(tokens);
 
-    destroy_statement(root);
+    // Runtime
+    context_t* context = create_context();
+    execute_statement(context, root);
 
+    dump_context(context);
+
+    destroy_statement(root);
+    destroy_context(context);
     return 0;
 }

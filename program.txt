@@ -1,4 +1,5 @@
-let truth: bool = !(true || true);
-if (truth) {
-    let stuff: int = 4;
-}
+let a = 3;
+a = 4;
+let b = a;
+const c = true;
+let other = 'fefeef';
