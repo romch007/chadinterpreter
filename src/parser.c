@@ -238,6 +238,10 @@ expr_t* parse_factor(parser_t* parser) {
             consume(parser, 1);
             expr = make_integer_literal(token->value.integer);
             break;
+        case TOKEN_FLOAT_LITERAL:
+            consume(parser, 1);
+            expr = make_float_literal(token->value.floating);
+            break;
         case TOKEN_STR_LITERAL:
             consume(parser, 1);
             expr = make_string_literal(token->value.str);

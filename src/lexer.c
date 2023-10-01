@@ -16,15 +16,6 @@ static char peek(int advance) {
     }
 }
 
-static int str_to_int(const char* str, size_t len) {
-    size_t i;
-    int ret = 0;
-    for (i = 0; i < len; ++i) {
-        ret = ret * 10 + (str[i] - '0');
-    }
-    return ret;
-}
-
 void vector_token_deleter(void* element) {
     token_t* token = (token_t*) element;
     if (token->type == TOKEN_IDENTIFIER || token->type == TOKEN_STR_LITERAL) {
@@ -125,21 +116,38 @@ cvector_vector_type(token_t) tokenize(char* value) {
                 token.type = TOKEN_GREATER;
             }
         } else if (isdigit(c)) {
+            bool floating_point = false;
             size_t start = current_pos;
             char next;
 
             for (;;) {
                 next = peek(1);
                 if (!isdigit(next)) {
-                    break;
+                    if (next != '.') break;
+
+                    if (floating_point) break;
+
+                    floating_point = true;
                 }
 
                 current_pos++;
             }
 
-            const char* repr = &input[start];
-            token.type = TOKEN_INT_LITERAL;
-            token.value.integer = str_to_int(repr, (current_pos - start) + 1);
+            size_t len = (current_pos - start) + 1;
+
+            char* substr = xmalloc(sizeof(char) * (len + 1));
+            memcpy(substr, &input[start], len);
+            substr[len] = '\0';
+
+            if (floating_point) {
+                token.type = TOKEN_FLOAT_LITERAL;
+                token.value.floating = atof(substr);
+            } else {
+                token.type = TOKEN_INT_LITERAL;
+                token.value.integer = atoi(substr);
+            }
+
+            free(substr);
         } else if (is_valid_identifier(c)) {
             size_t start = current_pos;
 

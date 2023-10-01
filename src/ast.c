@@ -45,6 +45,13 @@ expr_t* make_integer_literal(int value) {
     return expr;
 }
 
+expr_t* make_float_literal(double value) {
+    expr_t* expr = xmalloc(sizeof(expr_t));
+    expr->type = EXPR_FLOAT_LITERAL;
+    expr->op.float_literal = value;
+    return expr;
+}
+
 expr_t* make_string_literal(char* value) {
     expr_t* expr = xmalloc(sizeof(expr_t));
     expr->type = EXPR_STRING_LITERAL;

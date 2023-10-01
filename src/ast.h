@@ -9,6 +9,7 @@ typedef enum {
     EXPR_UNARY_OPT,
     EXPR_BOOL_LITERAL,
     EXPR_INT_LITERAL,
+    EXPR_FLOAT_LITERAL,
     EXPR_STRING_LITERAL,
     EXPR_VARIABLE_USE,
     EXPR_FUNCTION_CALL,
@@ -40,6 +41,7 @@ typedef struct expr {
         int integer_literal;
         char* string_literal;
         bool bool_literal;
+        double float_literal;
         struct {
             binary_opt_type_t type;
             struct expr* lhs;
@@ -63,6 +65,7 @@ expr_t* make_binary_op(binary_opt_type_t type, expr_t* lhs, expr_t* rhs);
 expr_t* make_unary_op(unary_opt_type_t type, expr_t* arg);
 expr_t* make_bool_literal(bool value);
 expr_t* make_integer_literal(int value);
+expr_t* make_float_literal(double value);
 expr_t* make_string_literal(char* value);
 expr_t* make_variable_use(char* name);
 expr_t* make_function_call(char* name);

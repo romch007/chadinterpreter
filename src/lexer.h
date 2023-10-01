@@ -16,6 +16,7 @@ typedef struct {
         char* str;
         int integer;
         bool boolean;
+        double floating;
     } value;
 } token_t;
 
