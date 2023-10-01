@@ -109,6 +109,7 @@ statement_t* make_if_condition_statement(expr_t* condition, statement_t* body) {
     statement->type = STATEMENT_IF_CONDITION;
     statement->op.if_condition.condition = condition;
     statement->op.if_condition.body = body;
+    statement->op.if_condition.body_else = NULL;
     return statement;
 }
 
@@ -147,7 +148,7 @@ void destroy_statement(statement_t* statement) {
             break;
         case STATEMENT_VARIABLE_DECL:
             free(statement->op.variable_declaration.variable_name);
-
+            free(statement->op.variable_declaration.type_name);
             destroy_expr(statement->op.variable_declaration.value);
             break;
         case STATEMENT_IF_CONDITION:
