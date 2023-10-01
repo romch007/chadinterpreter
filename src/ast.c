@@ -14,7 +14,7 @@ static void vector_expr_deleter(void* element) {
     destroy_expr(expr);
 }
 
-expr_t* make_binary_op(binary_opt_type_t type, expr_t* lhs, expr_t* rhs) {
+expr_t* make_binary_op(binary_op_type_t type, expr_t* lhs, expr_t* rhs) {
     expr_t* expr = xmalloc(sizeof(expr_t));
     expr->type = EXPR_BINARY_OPT;
     expr->op.binary.type = type;
@@ -23,7 +23,7 @@ expr_t* make_binary_op(binary_opt_type_t type, expr_t* lhs, expr_t* rhs) {
     return expr;
 }
 
-expr_t* make_unary_op(unary_opt_type_t type, expr_t* arg) {
+expr_t* make_unary_op(unary_op_type_t type, expr_t* arg) {
     expr_t* expr = xmalloc(sizeof(expr_t));
     expr->type = EXPR_UNARY_OPT;
     expr->op.unary.type = type;

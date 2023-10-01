@@ -150,9 +150,9 @@ struct hashmap* hashmap_new_with_allocator(void* (*_malloc)(size_t),
 // Param `cap` is the default lower capacity of the hashmap. Setting this to
 // zero will default to 16.
 // Params `seed0` and `seed1` are optional seed values that are passed to the
-// following `hash` function. These can be any value you wish but it's often
+// following `hash` function. These can be any content you wish but it's often
 // best to use randomly generated values.
-// Param `hash` is a function that generates a hash value for an item. It's
+// Param `hash` is a function that generates a hash content for an item. It's
 // important that you provide a good hash function, otherwise it will perform
 // poorly or be vulnerable to Denial-of-service attacks. This implementation
 // comes with two helper functions `hashmap_sip()` and `hashmap_murmur()`.
@@ -370,7 +370,7 @@ const void* hashmap_delete_with_hash(struct hashmap* map, const void* key,
             }
             map->count--;
             if (map->nbuckets > map->cap && map->count <= map->shrinkat) {
-                // Ignore the return value. It's ok for the resize operation to
+                // Ignore the return content. It's ok for the resize operation to
                 // fail to allocate enough memory because a shrink operation
                 // does not change the integrity of the data.
                 resize(map, map->nbuckets / 2);
@@ -821,13 +821,13 @@ static uint64_t xxh3(const void* data, size_t len, uint64_t seed) {
     return h64;
 }
 
-// hashmap_sip returns a hash value for `data` using SipHash-2-4.
+// hashmap_sip returns a hash content for `data` using SipHash-2-4.
 uint64_t hashmap_sip(const void* data, size_t len, uint64_t seed0,
                      uint64_t seed1) {
     return SIP64((uint8_t*) data, len, seed0, seed1);
 }
 
-// hashmap_murmur returns a hash value for `data` using Murmur3_86_128.
+// hashmap_murmur returns a hash content for `data` using Murmur3_86_128.
 uint64_t hashmap_murmur(const void* data, size_t len, uint64_t seed0,
                         uint64_t seed1) {
     (void) seed1;

@@ -28,12 +28,24 @@ typedef enum {
     BINARY_OP_GREATER_EQUAL,
     BINARY_OP_LESS,
     BINARY_OP_LESS_EQUAL,
-} binary_opt_type_t;
+} binary_op_type_t;
+
+static inline bool is_arithmetic_binary_op(binary_op_type_t type) {
+    return type == BINARY_OP_ADD || type == BINARY_OP_SUB || type == BINARY_OP_MUL || type == BINARY_OP_DIV;
+}
+
+static inline bool is_logical_binary_op(binary_op_type_t type) {
+    return type == BINARY_OP_AND || type == BINARY_OP_OR;
+}
+
+static inline bool is_comparison_binary_op(binary_op_type_t type) {
+    return !is_arithmetic_binary_op(type) && !is_logical_binary_op(type);
+}
 
 typedef enum {
     UNARY_OP_NEG,
     UNARY_OP_NOT,
-} unary_opt_type_t;
+} unary_op_type_t;
 
 typedef struct expr {
     expr_type_t type;
@@ -43,12 +55,12 @@ typedef struct expr {
         bool bool_literal;
         double float_literal;
         struct {
-            binary_opt_type_t type;
+            binary_op_type_t type;
             struct expr* lhs;
             struct expr* rhs;
         } binary;
         struct {
-            unary_opt_type_t type;
+            unary_op_type_t type;
             struct expr* arg;
         } unary;
         struct {
@@ -61,8 +73,8 @@ typedef struct expr {
     } op;
 } expr_t;
 
-expr_t* make_binary_op(binary_opt_type_t type, expr_t* lhs, expr_t* rhs);
-expr_t* make_unary_op(unary_opt_type_t type, expr_t* arg);
+expr_t* make_binary_op(binary_op_type_t type, expr_t* lhs, expr_t* rhs);
+expr_t* make_unary_op(unary_op_type_t type, expr_t* arg);
 expr_t* make_bool_literal(bool value);
 expr_t* make_integer_literal(int value);
 expr_t* make_float_literal(double value);

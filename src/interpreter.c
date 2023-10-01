@@ -25,7 +25,21 @@ void dump_context(context_t* context) {
     void* item;
     while (hashmap_iter(context->variables, &iter, &item)) {
         const runtime_variable_t* variable = item;
-        printf("%s - type %s\n", variable->name, runtime_type_to_string(variable->value.type));
+        printf("%s: %s = ", variable->name, runtime_type_to_string(variable->content.type));
+        switch (variable->content.type) {
+            case RUNTIME_TYPE_STRING:
+                printf("%s\n", variable->content.value.string);
+                break;
+            case RUNTIME_TYPE_INTEGER:
+                printf("%d\n", variable->content.value.integer);
+                break;
+            case RUNTIME_TYPE_FLOAT:
+                printf("%f\n", variable->content.value.floating);
+                break;
+            case RUNTIME_TYPE_BOOLEAN:
+                printf("%s\n", variable->content.value.boolean ? "true" : "false");
+                break;
+        }
     }
 }
 
@@ -35,8 +49,8 @@ void destroy_context(context_t* context) {
     while (hashmap_iter(context->variables, &iter, &item)) {
         const runtime_variable_t* variable = item;
         free(variable->name);
-        if (variable->value.type == RUNTIME_TYPE_STRING) {
-            free(variable->value.value.string);
+        if (variable->content.type == RUNTIME_TYPE_STRING) {
+            free(variable->content.value.string);
         }
     }
     hashmap_free(context->variables);
@@ -60,7 +74,7 @@ void execute_statement(context_t* context, statement_t* statement) {
         case STATEMENT_VARIABLE_DECL: {
             runtime_variable_t variable = {
                     .name = copy_alloc(statement->op.variable_declaration.variable_name),
-                    .value = evaluate_expr(context, statement->op.variable_declaration.value),
+                    .content = evaluate_expr(context, statement->op.variable_declaration.value),
                     .is_constant = statement->op.variable_declaration.is_constant};
 
             hashmap_set(context->variables, &variable);
@@ -78,12 +92,49 @@ void execute_statement(context_t* context, statement_t* statement) {
 
             runtime_variable_t variable = {
                     .name = old_variable->name,
-                    .value = evaluate_expr(context, statement->op.variable_assignment.value),
+                    .content = evaluate_expr(context, statement->op.variable_assignment.value),
                     .is_constant = false,
             };
 
             hashmap_set(context->variables, &variable);
+            break;
         }
+        case STATEMENT_IF_CONDITION: {
+            runtime_value_t condition = evaluate_expr(context, statement->op.if_condition.condition);
+
+            if (condition.type != RUNTIME_TYPE_BOOLEAN) {
+                printf("ERROR: found a value of type %s in a if condition\n", runtime_type_to_string(condition.type));
+                exit(EXIT_FAILURE);
+            }
+
+            statement_t* body = statement->op.if_condition.body;
+            statement_t* body_else = statement->op.if_condition.body_else;
+
+            if (condition.value.boolean) {
+                execute_statement(context, body);
+            } else if (body_else != NULL) {
+                execute_statement(context, body_else);
+            }
+            break;
+        }
+        case STATEMENT_WHILE_LOOP: {
+            runtime_value_t condition = evaluate_expr(context, statement->op.while_loop.condition);
+
+            if (condition.type != RUNTIME_TYPE_BOOLEAN) {
+                printf("ERROR: found a value of type %s in a while condition\n", runtime_type_to_string(condition.type));
+                exit(EXIT_FAILURE);
+            }
+
+            while (condition.value.boolean) {
+                execute_statement(context, statement->op.while_loop.body);
+
+                condition = evaluate_expr(context, statement->op.while_loop.condition);
+            }
+            break;
+        }
+        default:
+            printf("ERROR: cannot execute statement\n");
+            abort();
     }
 }
 
@@ -122,20 +173,214 @@ runtime_value_t evaluate_expr(context_t* context, expr_t* expr) {
 
             const runtime_variable_t* variable = hashmap_get(context->variables, &(runtime_variable_t){.name = variable_name});
 
-            return variable->value;
+            return variable->content;
         }
         case EXPR_BINARY_OPT:
             return evaluate_binary_op(context, expr->op.binary.type, expr->op.binary.lhs, expr->op.binary.rhs);
         case EXPR_UNARY_OPT:
             return evaluate_unary_op(context, expr->op.unary.type, expr->op.unary.arg);
         default:
-            printf("ERROR: cannot evaluate expression");
+            printf("ERROR: cannot evaluate expression\n");
             abort();
     }
 }
 
-runtime_value_t evaluate_binary_op(context_t* context, binary_opt_type_t type, expr_t* lhs, expr_t* rhs) {}
-runtime_value_t evaluate_unary_op(context_t* context, unary_opt_type_t type, expr_t* arg) {}
+runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type, expr_t* lhs, expr_t* rhs) {
+    runtime_value_t lhs_value = evaluate_expr(context, lhs);
+    runtime_value_t rhs_value = evaluate_expr(context, rhs);
+
+    if (lhs_value.type != rhs_value.type) {
+        printf("ERROR: type mismatch between %s and %s\n", runtime_type_to_string(lhs_value.type), runtime_type_to_string(rhs_value.type));
+        exit(EXIT_FAILURE);
+    }
+
+    runtime_type_t value_type = lhs_value.type;
+
+    if (is_arithmetic_binary_op(op_type)) {
+        if (value_type != RUNTIME_TYPE_INTEGER && value_type != RUNTIME_TYPE_FLOAT) {
+            printf("ERROR: cannot use arithmetic operator on type %s\n", runtime_type_to_string(value_type));
+            exit(EXIT_FAILURE);
+        }
+
+        if (value_type == RUNTIME_TYPE_INTEGER) {
+            // Arithmetic operations with integers
+            runtime_value_t result_value = {
+                    .type = RUNTIME_TYPE_INTEGER};
+
+            switch (op_type) {
+                case BINARY_OP_ADD:
+                    result_value.value.integer = lhs_value.value.integer + rhs_value.value.integer;
+                    break;
+                case BINARY_OP_SUB:
+                    result_value.value.integer = lhs_value.value.integer - rhs_value.value.integer;
+                    break;
+                case BINARY_OP_MUL:
+                    result_value.value.integer = lhs_value.value.integer * rhs_value.value.integer;
+                    break;
+                case BINARY_OP_DIV:
+                    if (rhs_value.value.integer == 0) {
+                        printf("ERROR: cannot divide by zero\n");
+                        exit(EXIT_FAILURE);
+                    }
+                    result_value.value.integer = lhs_value.value.integer / rhs_value.value.integer;
+                    break;
+                default:
+                    break;
+            }
+
+            return result_value;
+        } else {
+            // Arithmetic operations with floats
+            runtime_value_t result_value = {
+                    .type = RUNTIME_TYPE_FLOAT};
+
+            switch (op_type) {
+                case BINARY_OP_ADD:
+                    result_value.value.floating = lhs_value.value.floating + rhs_value.value.floating;
+                    break;
+                case BINARY_OP_SUB:
+                    result_value.value.floating = lhs_value.value.floating - rhs_value.value.floating;
+                    break;
+                case BINARY_OP_MUL:
+                    result_value.value.floating = lhs_value.value.floating * rhs_value.value.floating;
+                    break;
+                case BINARY_OP_DIV:
+                    if (rhs_value.value.floating == 0) {
+                        printf("ERROR: cannot divide by zero\n");
+                        exit(EXIT_FAILURE);
+                    }
+                    result_value.value.floating = lhs_value.value.floating / rhs_value.value.floating;
+                    break;
+                default:
+                    break;
+            }
+
+            return result_value;
+        }
+    } else if (is_logical_binary_op(op_type)) {
+        if (value_type != RUNTIME_TYPE_BOOLEAN) {
+            printf("ERROR: cannot use logical operator on type %s\n", runtime_type_to_string(value_type));
+            exit(EXIT_FAILURE);
+        }
+
+        runtime_value_t result_value = {
+                .type = RUNTIME_TYPE_BOOLEAN,
+        };
+
+        switch (op_type) {
+            case BINARY_OP_AND:
+                result_value.value.boolean = lhs_value.value.boolean && rhs_value.value.boolean;
+                break;
+            case BINARY_OP_OR:
+                result_value.value.boolean = lhs_value.value.boolean || rhs_value.value.boolean;
+                break;
+            default:
+                break;
+        }
+
+        return result_value;
+    } else if (is_comparison_binary_op(op_type)) {
+        if (value_type != RUNTIME_TYPE_INTEGER && value_type != RUNTIME_TYPE_FLOAT) {
+            printf("ERROR: cannot use comparison operator on type %s\n", runtime_type_to_string(value_type));
+            exit(EXIT_FAILURE);
+        }
+
+        runtime_value_t result_value = {
+                .type = RUNTIME_TYPE_BOOLEAN
+        };
+
+        if (value_type == RUNTIME_TYPE_INTEGER) {
+            // Comparison operations with integers
+            switch (op_type) {
+                case BINARY_OP_EQUAL:
+                    result_value.value.boolean = lhs_value.value.integer == rhs_value.value.integer;
+                    break;
+                case BINARY_OP_NOT_EQUAL:
+                    result_value.value.boolean = lhs_value.value.integer != rhs_value.value.integer;
+                    break;
+                case BINARY_OP_GREATER:
+                    result_value.value.boolean = lhs_value.value.integer > rhs_value.value.integer;
+                    break;
+                case BINARY_OP_GREATER_EQUAL:
+                    result_value.value.boolean = lhs_value.value.integer >= rhs_value.value.integer;
+                    break;
+                case BINARY_OP_LESS:
+                    result_value.value.boolean = lhs_value.value.integer < rhs_value.value.integer;
+                    break;
+                case BINARY_OP_LESS_EQUAL:
+                    result_value.value.boolean = lhs_value.value.integer <= rhs_value.value.integer;
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            // Comparison operations with floats
+            switch (op_type) {
+                case BINARY_OP_EQUAL:
+                    result_value.value.boolean = lhs_value.value.floating == rhs_value.value.floating;
+                    break;
+                case BINARY_OP_NOT_EQUAL:
+                    result_value.value.boolean = lhs_value.value.floating != rhs_value.value.floating;
+                    break;
+                case BINARY_OP_GREATER:
+                    result_value.value.boolean = lhs_value.value.floating > rhs_value.value.floating;
+                    break;
+                case BINARY_OP_GREATER_EQUAL:
+                    result_value.value.boolean = lhs_value.value.floating >= rhs_value.value.floating;
+                    break;
+                case BINARY_OP_LESS:
+                    result_value.value.boolean = lhs_value.value.floating < rhs_value.value.floating;
+                    break;
+                case BINARY_OP_LESS_EQUAL:
+                    result_value.value.boolean = lhs_value.value.floating <= rhs_value.value.floating;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        return result_value;
+    } else {
+        printf("ERROR: unknown binary operator\n");
+        abort();
+    }
+}
+
+runtime_value_t evaluate_unary_op(context_t* context, unary_op_type_t op_type, expr_t* arg) {
+    runtime_value_t arg_value = evaluate_expr(context, arg);
+
+    if (op_type == UNARY_OP_NOT) {
+        if (arg_value.type != RUNTIME_TYPE_BOOLEAN) {
+            printf("ERROR: cannot use logical operation on type %s\n", runtime_type_to_string(arg_value.type));
+            exit(EXIT_FAILURE);
+        }
+
+        arg_value.value.boolean = !arg_value.value.boolean;
+
+        return arg_value;
+    } else if (op_type == UNARY_OP_NEG) {
+        if (arg_value.type != RUNTIME_TYPE_INTEGER && arg_value.type != RUNTIME_TYPE_FLOAT) {
+            printf("ERROR: cannot use logical operation on type %s\n", runtime_type_to_string(arg_value.type));
+            exit(EXIT_FAILURE);
+        }
+
+        switch (arg_value.type) {
+            case RUNTIME_TYPE_FLOAT:
+                arg_value.value.floating = -arg_value.value.floating;
+                break;
+            case RUNTIME_TYPE_INTEGER:
+                arg_value.value.integer = -arg_value.value.integer;
+                break;
+            default:
+                break;
+        }
+
+        return arg_value;
+    } else {
+        printf("ERROR: unknown unary operator\n");
+        abort();
+    }
+}
 
 runtime_type_t string_to_runtime_type(char* str) {
 #define PNS_INTERPRETER_RUNTIME_TYPE(A, B) \

@@ -231,7 +231,7 @@ typedef struct cvector_metadata_t {
 /**
  * @brief cvector_push_back - adds an element to the end of the vector
  * @param vec - the vector
- * @param value - the value to add
+ * @param value - the content to add
  * @return void
  */
 #define cvector_push_back(vec, value)                                 \
@@ -248,7 +248,7 @@ typedef struct cvector_metadata_t {
  * @brief cvector_insert - insert element at position pos to the vector
  * @param vec - the vector
  * @param pos - position in the vector where the new elements are inserted.
- * @param val - value to be copied (or moved) to the inserted elements.
+ * @param val - content to be copied (or moved) to the inserted elements.
  * @return void
  */
 #define cvector_insert(vec, pos, val)                                 \

@@ -26,8 +26,8 @@ typedef struct {
 
 typedef struct {
     char* name;
-    runtime_value_t value;
     bool is_constant;
+    runtime_value_t content;
 } runtime_variable_t;
 
 context_t* create_context();
@@ -37,8 +37,8 @@ void destroy_context(context_t* context);
 void execute_statement(context_t* context, statement_t* statement);
 
 runtime_value_t evaluate_expr(context_t* context, expr_t* expr);
-runtime_value_t evaluate_binary_op(context_t*, binary_opt_type_t type, expr_t* lhs, expr_t* rhs);
-runtime_value_t evaluate_unary_op(context_t*, unary_opt_type_t type, expr_t* arg);
+runtime_value_t evaluate_binary_op(context_t*, binary_op_type_t op_type, expr_t* lhs, expr_t* rhs);
+runtime_value_t evaluate_unary_op(context_t*, unary_op_type_t op_type, expr_t* arg);
 
 runtime_type_t string_to_runtime_type(char* str);
 char* runtime_type_to_string(runtime_type_t type);

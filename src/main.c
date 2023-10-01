@@ -1,9 +1,9 @@
 #define CVECTOR_LOGARITHMIC_GROWTH
 
 #include "hashmap.h"
-#include "mem.h"
 #include "interpreter.h"
 #include "lexer.h"
+#include "mem.h"
 #include "parser.h"
 #include <stdio.h>
 

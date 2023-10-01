@@ -105,7 +105,7 @@ statement_t* parse_variable_declaration(parser_t* parser) {
     // equal sign
     expect(parser, advance(parser), TOKEN_EQUAL);
 
-    // variable value
+    // variable content
     expr_t* value = parse_expression(parser);
 
     expect(parser, advance(parser), TOKEN_SEMICOLON);
@@ -145,7 +145,7 @@ expr_t* parse_expression(parser_t* parser) {
 
     for (;;) {
         token_t* token = peek(parser, 0);
-        binary_opt_type_t op_type;
+        binary_op_type_t op_type;
 
         bool invalid = false;
         switch (token->type) {
@@ -191,7 +191,7 @@ expr_t* parse_term(parser_t* parser) {
 
     for (;;) {
         token_t* token = peek(parser, 0);
-        binary_opt_type_t op_type;
+        binary_op_type_t op_type;
 
         bool invalid = false;
         switch (token->type) {
