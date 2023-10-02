@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.22)
 
 project(pns-interpreter LANGUAGES C)
 
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED TRUE)
+
 set(default_build_type "Debug")
 
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -16,8 +19,6 @@ file(GLOB_RECURSE SRCS src/*.c)
 file(GLOB_RECURSE HDRS src/*.h)
 
 add_executable(eval ${SRCS} ${HDRS})
-
-set_property(TARGET eval PROPERTY C_STANDARD 99)
 
 if (UNIX)
   target_compile_options(eval PRIVATE "-Wall")
