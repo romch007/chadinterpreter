@@ -17,4 +17,10 @@ file(GLOB_RECURSE HDRS src/*.h)
 
 add_executable(eval ${SRCS} ${HDRS})
 
+set_property(TARGET eval PROPERTY C_STANDARD 99)
+
+if (UNIX)
+  target_compile_options(eval PRIVATE "-Wall")
+endif ()
+
 install(TARGETS eval)

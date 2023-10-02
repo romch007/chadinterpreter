@@ -6,9 +6,16 @@
 #include "mem.h"
 #include "parser.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 static char* read_file_content(char* filename) {
     FILE* file = fopen(filename, "r");
+
+    if (file == NULL) {
+        printf("ERROR: file not found\n");
+        exit(EXIT_FAILURE);
+    }
+
     fseek(file, 0, SEEK_END);
     long fsize = ftell(file);
     fseek(file, 0, SEEK_SET); /* same as rewind(f); */

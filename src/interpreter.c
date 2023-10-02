@@ -426,7 +426,7 @@ runtime_value_t evaluate_unary_op(context_t* context, unary_op_type_t op_type, e
 
 runtime_type_t string_to_runtime_type(char* str) {
 #define PNS_INTERPRETER_RUNTIME_TYPE(A, B) \
-    if (strcmp(str, #B) == 0) {                 \
+    if (strcmp(str, #B) == 0) {            \
         return RUNTIME_TYPE_##A;           \
     }
 #include "runtime_types.h"
@@ -440,4 +440,6 @@ char* runtime_type_to_string(runtime_type_t type) {
         return #B;
 #include "runtime_types.h"
     }
+
+    return NULL;
 }

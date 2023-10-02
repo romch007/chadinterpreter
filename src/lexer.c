@@ -211,6 +211,7 @@ char* token_type_to_string(token_type_t type) {
         return #X;
 #include "tokens.h"
     }
+    return NULL;
 }
 
 void print_tokens(cvector_vector_type(token_t) tokens) {
