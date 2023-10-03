@@ -15,7 +15,7 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
             "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif ()
 
-find_package(PkgConfig REQUIRED)
+find_package(PkgConfig)
 
 add_library(pns-interpreter
         src/ast.c
@@ -37,15 +37,22 @@ add_library(pns-interpreter
 
 add_executable(eval src/eval.c)
 
-pkg_check_modules(readline REQUIRED readline)
+if (PKG_CONFIG_FOUND)
+  pkg_check_modules(readline readline)
 
-add_executable(repl src/repl.c)
+  if (readline_FOUND)
+    add_executable(repl src/repl.c)
+    target_link_libraries(repl PRIVATE pns-interpreter readline)
+    if (UNIX)
+      target_compile_options(repl PRIVATE "-Wall")
+    endif ()
+  endif ()
+endif ()
+
 
 target_link_libraries(eval PRIVATE pns-interpreter)
-target_link_libraries(repl PRIVATE pns-interpreter readline)
 
 if (UNIX)
     target_compile_options(pns-interpreter PRIVATE "-Wall")
     target_compile_options(eval PRIVATE "-Wall")
-    target_compile_options(repl PRIVATE "-Wall")
 endif ()

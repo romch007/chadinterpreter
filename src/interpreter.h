@@ -7,6 +7,10 @@
 
 typedef struct {
     struct hashmap* variables;
+} stack_frame_t;
+
+typedef struct {
+    cvector_vector_type(stack_frame_t) frames;
 } context_t;
 
 typedef enum {
@@ -31,10 +35,15 @@ typedef struct {
 } runtime_variable_t;
 
 context_t* create_context();
-void dump_context(context_t* context);
 void destroy_context(context_t* context);
 
-const void* get_variable(context_t* context, const char* variable_name);
+void push_stack_frame(context_t* context);
+void pop_stack_frame(context_t* context);
+
+void dump_context(context_t* context);
+void dump_stack_frame(stack_frame_t* frame);
+
+const runtime_variable_t* get_variable(context_t* context, const char* variable_name, int* stack_index);
 
 void execute_statement(context_t* context, statement_t* statement);
 

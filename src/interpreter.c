@@ -15,15 +15,27 @@ static uint64_t variable_hash(const void* item, uint64_t seed0, uint64_t seed1) 
 
 context_t* create_context() {
     context_t* context = xmalloc(sizeof(context_t));
-    context->variables = hashmap_new(sizeof(runtime_variable_t), 0, 0, 0, variable_hash, variable_compare, NULL, NULL);
+    context->frames = NULL;
     return context;
+}
+
+static stack_frame_t* get_current_stack_frame(context_t* context) {
+    return cvector_end(context->frames) - 1;
 }
 
 void dump_context(context_t* context) {
     printf("--- variables ---\n");
+    stack_frame_t* it;
+    for (it = cvector_begin(context->frames); it != cvector_end(context->frames); it++) {
+        dump_stack_frame(it);
+    }
+}
+
+
+void dump_stack_frame(stack_frame_t* frame) {
     size_t iter = 0;
     void* item;
-    while (hashmap_iter(context->variables, &iter, &item)) {
+    while (hashmap_iter(frame->variables, &iter, &item)) {
         const runtime_variable_t* variable = item;
         printf("%s: %s = ", variable->name, runtime_type_to_string(variable->content.type));
         switch (variable->content.type) {
@@ -44,17 +56,33 @@ void dump_context(context_t* context) {
 }
 
 void destroy_context(context_t* context) {
+    for (int i = 0; i < cvector_size(context->frames); i++) {
+        pop_stack_frame(context);
+    }
+    free(context);
+}
+
+void push_stack_frame(context_t* context) {
+    stack_frame_t frame = {
+        .variables = hashmap_new(sizeof(runtime_variable_t), 0, 0, 0, variable_hash, variable_compare, NULL, NULL),
+    };
+
+    cvector_push_back(context->frames, frame);
+}
+
+void pop_stack_frame(context_t* context) {
+    stack_frame_t* frame = get_current_stack_frame(context);
     size_t iter = 0;
     void* item;
-    while (hashmap_iter(context->variables, &iter, &item)) {
+    while (hashmap_iter(frame->variables, &iter, &item)) {
         const runtime_variable_t* variable = item;
         free(variable->name);
         if (variable->content.type == RUNTIME_TYPE_STRING) {
             free(variable->content.value.string);
         }
     }
-    hashmap_free(context->variables);
-    free(context);
+    hashmap_free(frame->variables);
+    cvector_pop_back(context->frames);
 }
 
 void execute_statement(context_t* context, statement_t* statement) {
@@ -62,11 +90,16 @@ void execute_statement(context_t* context, statement_t* statement) {
         case STATEMENT_BLOCK: {
             cvector_vector_type(statement_t*) statements = statement->op.block.statements;
 
+            push_stack_frame(context);
+
             statement_t** it;
             for (it = cvector_begin(statements); it != cvector_end(statements); ++it) {
                 statement_t* current_statement = *it;
                 execute_statement(context, current_statement);
             }
+
+            dump_context(context);
+            pop_stack_frame(context);
 
             break;
         }
@@ -74,7 +107,7 @@ void execute_statement(context_t* context, statement_t* statement) {
             char* variable_name = statement->op.variable_declaration.variable_name;
 
             // Check if this declaration is shadowing a constant variable
-            const runtime_variable_t* old_variable = get_variable(context, variable_name);
+            const runtime_variable_t* old_variable = get_variable(context, variable_name, NULL);
 
             if (old_variable != NULL && old_variable->is_constant == true) {
                 printf("ERROR: declaration of '%s' is shadowing a constant variable\n", variable_name);
@@ -118,13 +151,15 @@ void execute_statement(context_t* context, statement_t* statement) {
                 variable.content = default_value;
             }
 
-            hashmap_set(context->variables, &variable);
+            hashmap_set(get_current_stack_frame(context)->variables, &variable);
             break;
         }
         case STATEMENT_VARIABLE_ASSIGN: {
             char* variable_name = statement->op.variable_assignment.variable_name;
 
-            const runtime_variable_t* old_variable = get_variable(context, variable_name);
+            int stack_index;
+
+            const runtime_variable_t* old_variable = get_variable(context, variable_name, &stack_index);
 
             if (old_variable == NULL) {
                 printf("ERROR: cannot find variable '%s'\n", variable_name);
@@ -149,7 +184,8 @@ void execute_statement(context_t* context, statement_t* statement) {
                     .is_constant = false,
             };
 
-            hashmap_set(context->variables, &variable);
+            // FIXME: this is not good
+            hashmap_set(context->frames[stack_index].variables, &variable);
             break;
         }
         case STATEMENT_IF_CONDITION: {
@@ -191,8 +227,21 @@ void execute_statement(context_t* context, statement_t* statement) {
     }
 }
 
-const void* get_variable(context_t* context, const char* variable_name) {
-    return hashmap_get(context->variables, &(runtime_variable_t){.name = (char*)variable_name});
+const runtime_variable_t* get_variable(context_t* context, const char* variable_name, int* stack_index) {
+    stack_frame_t* it;
+    int i = cvector_size(context->frames) - 1;
+    for (it = cvector_end(context->frames); it-- != cvector_begin(context->frames);) {
+        const runtime_variable_t* variable = (const runtime_variable_t *)hashmap_get(it->variables, &(runtime_variable_t){.name = (char*)variable_name});
+
+        if (variable != NULL) {
+            if (stack_index != NULL) *stack_index = i;
+            return variable;
+        }
+
+        i--;
+    }
+
+    return NULL;
 }
 
 runtime_value_t evaluate_expr(context_t* context, expr_t* expr) {
@@ -228,7 +277,7 @@ runtime_value_t evaluate_expr(context_t* context, expr_t* expr) {
         case EXPR_VARIABLE_USE: {
             char* variable_name = expr->op.variable_use.name;
 
-            const runtime_variable_t* variable = hashmap_get(context->variables, &(runtime_variable_t){.name = variable_name});
+            const runtime_variable_t* variable = get_variable(context, variable_name, NULL);
 
             if (variable == NULL) {
                 printf("ERROR: cannot find variable '%s'\n", variable_name);
