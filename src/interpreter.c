@@ -14,7 +14,7 @@ static uint64_t variable_hash(const void* item, uint64_t seed0, uint64_t seed1) 
 }
 
 context_t* create_context() {
-    context_t* context = xmalloc(sizeof(context));
+    context_t* context = xmalloc(sizeof(context_t));
     context->variables = hashmap_new(sizeof(runtime_variable_t), 0, 0, 0, variable_hash, variable_compare, NULL, NULL);
     return context;
 }
@@ -71,8 +71,18 @@ void execute_statement(context_t* context, statement_t* statement) {
             break;
         }
         case STATEMENT_VARIABLE_DECL: {
+            char* variable_name = statement->op.variable_declaration.variable_name;
+
+            // Check if this declaration is shadowing a constant variable
+            const runtime_variable_t* old_variable = get_variable(context, variable_name);
+
+            if (old_variable != NULL && old_variable->is_constant == true) {
+                printf("ERROR: declaration of '%s' is shadowing a constant variable\n", variable_name);
+                exit(EXIT_FAILURE);
+            }
+
             runtime_variable_t variable = {
-                    .name = copy_alloc(statement->op.variable_declaration.variable_name),
+                    .name = copy_alloc(variable_name),
                     .is_constant = statement->op.variable_declaration.is_constant,
             };
 
@@ -114,7 +124,12 @@ void execute_statement(context_t* context, statement_t* statement) {
         case STATEMENT_VARIABLE_ASSIGN: {
             char* variable_name = statement->op.variable_assignment.variable_name;
 
-            const runtime_variable_t* old_variable = hashmap_get(context->variables, &(runtime_variable_t){.name = variable_name});
+            const runtime_variable_t* old_variable = get_variable(context, variable_name);
+
+            if (old_variable == NULL) {
+                printf("ERROR: cannot find variable '%s'\n", variable_name);
+                exit(EXIT_FAILURE);
+            }
 
             if (old_variable->is_constant) {
                 printf("ERROR: variable '%s' is constant\n", variable_name);
@@ -174,6 +189,10 @@ void execute_statement(context_t* context, statement_t* statement) {
             printf("ERROR: cannot execute statement\n");
             abort();
     }
+}
+
+const void* get_variable(context_t* context, const char* variable_name) {
+    return hashmap_get(context->variables, &(runtime_variable_t){.name = (char*)variable_name});
 }
 
 runtime_value_t evaluate_expr(context_t* context, expr_t* expr) {
@@ -424,7 +443,7 @@ runtime_value_t evaluate_unary_op(context_t* context, unary_op_type_t op_type, e
     }
 }
 
-runtime_type_t string_to_runtime_type(char* str) {
+runtime_type_t string_to_runtime_type(const char* str) {
 #define PNS_INTERPRETER_RUNTIME_TYPE(A, B) \
     if (strcmp(str, #B) == 0) {            \
         return RUNTIME_TYPE_##A;           \
@@ -433,7 +452,7 @@ runtime_type_t string_to_runtime_type(char* str) {
     return -1;
 }
 
-char* runtime_type_to_string(runtime_type_t type) {
+const char* runtime_type_to_string(runtime_type_t type) {
     switch (type) {
 #define PNS_INTERPRETER_RUNTIME_TYPE(A, B) \
     case RUNTIME_TYPE_##A:                 \

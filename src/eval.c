@@ -1,5 +1,3 @@
-#define CVECTOR_LOGARITHMIC_GROWTH
-
 #include "hashmap.h"
 #include "interpreter.h"
 #include "lexer.h"
@@ -30,8 +28,6 @@ static char* read_file_content(char* filename) {
 }
 
 int main(int argc, char** argv) {
-    hashmap_set_allocator(&xmalloc, &free);
-
     if (argc < 2) {
         printf("ERROR: no file specified\n");
         return 1;

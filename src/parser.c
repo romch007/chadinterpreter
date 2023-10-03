@@ -165,6 +165,9 @@ expr_t* parse_expression(parser_t* parser) {
             case TOKEN_MINUS:
                 op_type = BINARY_OP_SUB;
                 break;
+            case TOKEN_OR:
+                op_type = BINARY_OP_OR;
+                break;
             case TOKEN_DOUBLE_EQUAL:
                 op_type = BINARY_OP_EQUAL;
                 break;
@@ -213,9 +216,6 @@ expr_t* parse_term(parser_t* parser) {
                 break;
             case TOKEN_AND:
                 op_type = BINARY_OP_AND;
-                break;
-            case TOKEN_OR:
-                op_type = BINARY_OP_OR;
                 break;
             default:
                 invalid = true;

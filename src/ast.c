@@ -14,6 +14,11 @@ static void vector_expr_deleter(void* element) {
     destroy_expr(expr);
 }
 
+
+extern inline bool is_arithmetic_binary_op(binary_op_type_t type);
+extern inline bool is_logical_binary_op(binary_op_type_t type);
+extern inline bool is_comparison_binary_op(binary_op_type_t type);
+
 expr_t* make_binary_op(binary_op_type_t type, expr_t* lhs, expr_t* rhs) {
     expr_t* expr = xmalloc(sizeof(expr_t));
     expr->type = EXPR_BINARY_OPT;
@@ -52,21 +57,21 @@ expr_t* make_float_literal(double value) {
     return expr;
 }
 
-expr_t* make_string_literal(char* value) {
+expr_t* make_string_literal(const char* value) {
     expr_t* expr = xmalloc(sizeof(expr_t));
     expr->type = EXPR_STRING_LITERAL;
     expr->op.string_literal = copy_alloc(value);
     return expr;
 }
 
-expr_t* make_variable_use(char* name) {
+expr_t* make_variable_use(const char* name) {
     expr_t* expr = xmalloc(sizeof(expr_t));
     expr->type = EXPR_VARIABLE_USE;
     expr->op.variable_use.name = copy_alloc(name);
     return expr;
 }
 
-expr_t* make_function_call(char* name) {
+expr_t* make_function_call(const char* name) {
     expr_t* expr = xmalloc(sizeof(expr_t));
     expr->type = EXPR_FUNCTION_CALL;
     expr->op.function_call.name = copy_alloc(name);
@@ -120,7 +125,7 @@ statement_t* make_if_condition_statement(expr_t* condition, statement_t* body) {
     return statement;
 }
 
-statement_t* make_variable_declaration(bool constant, char* variable_name) {
+statement_t* make_variable_declaration(bool constant, const char* variable_name) {
     statement_t* statement = xmalloc(sizeof(statement_t));
     statement->type = STATEMENT_VARIABLE_DECL;
     statement->op.variable_declaration.is_constant = constant;
@@ -130,7 +135,7 @@ statement_t* make_variable_declaration(bool constant, char* variable_name) {
     return statement;
 }
 
-statement_t* make_variable_assignment(char* variable_name, expr_t* value) {
+statement_t* make_variable_assignment(const char* variable_name, expr_t* value) {
     statement_t* statement = xmalloc(sizeof(statement_t));
     statement->type = STATEMENT_VARIABLE_ASSIGN;
     statement->op.variable_assignment.variable_name = copy_alloc(variable_name);

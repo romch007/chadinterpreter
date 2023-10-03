@@ -15,13 +15,37 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
             "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif ()
 
-file(GLOB_RECURSE SRCS src/*.c)
-file(GLOB_RECURSE HDRS src/*.h)
+find_package(PkgConfig REQUIRED)
 
-add_executable(eval ${SRCS} ${HDRS})
+add_library(pns-interpreter
+        src/ast.c
+        src/ast.h
+        src/cvector.h
+        src/hashmap.c
+        src/hashmap.h
+        src/interpreter.c
+        src/interpreter.h
+        src/lexer.c
+        src/lexer.h
+        src/mem.c
+        src/mem.h
+        src/parser.c
+        src/parser.h
+        src/runtime_types.h
+        src/tokens.h
+)
+
+add_executable(eval src/eval.c)
+
+pkg_check_modules(readline REQUIRED readline)
+
+add_executable(repl src/repl.c)
+
+target_link_libraries(eval PRIVATE pns-interpreter)
+target_link_libraries(repl PRIVATE pns-interpreter readline)
 
 if (UNIX)
-  target_compile_options(eval PRIVATE "-Wall")
+    target_compile_options(pns-interpreter PRIVATE "-Wall")
+    target_compile_options(eval PRIVATE "-Wall")
+    target_compile_options(repl PRIVATE "-Wall")
 endif ()
-
-install(TARGETS eval)

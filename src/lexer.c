@@ -5,12 +5,12 @@
 #include <string.h>
 
 static size_t current_pos = 0;
-static char* input = NULL;
+static const char* s_input = NULL;
 static size_t input_len = 0;
 
 static char peek(int advance) {
-    if (current_pos + advance < input_len && input[current_pos + advance] != '\0') {
-        return input[current_pos + advance];
+    if (current_pos + advance < input_len && s_input[current_pos + advance] != '\0') {
+        return s_input[current_pos + advance];
     } else {
         return '\0';
     }
@@ -31,10 +31,10 @@ static bool is_valid_identifier(char c) {
     return c == '_' || isalpha(c);
 }
 
-cvector_vector_type(token_t) tokenize(char* value) {
+cvector_vector_type(token_t) tokenize(const char* input) {
     current_pos = 0;
-    input = value;
-    input_len = strlen(value);
+    s_input = input;
+    input_len = strlen(input);
     cvector_vector_type(token_t) tokens = NULL;
 
     for (;;) {
@@ -204,7 +204,7 @@ cvector_vector_type(token_t) tokenize(char* value) {
     return tokens;
 }
 
-char* token_type_to_string(token_type_t type) {
+const char* token_type_to_string(token_type_t type) {
     switch (type) {
 #define PNS_INTERPRETER_TOKEN(X) \
     case TOKEN_##X:              \

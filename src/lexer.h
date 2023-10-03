@@ -20,10 +20,10 @@ typedef struct {
     } value;
 } token_t;
 
-cvector_vector_type(token_t) tokenize(char* input);
+cvector_vector_type(token_t) tokenize(const char* input);
 
 void print_tokens(cvector_vector_type(token_t) tokens);
-char* token_type_to_string(token_type_t type);
+const char* token_type_to_string(token_type_t type);
 
 void vector_token_deleter(void* element);
 

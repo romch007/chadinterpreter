@@ -30,15 +30,15 @@ typedef enum {
     BINARY_OP_LESS_EQUAL,
 } binary_op_type_t;
 
-static inline bool is_arithmetic_binary_op(binary_op_type_t type) {
+inline bool is_arithmetic_binary_op(binary_op_type_t type) {
     return type == BINARY_OP_ADD || type == BINARY_OP_SUB || type == BINARY_OP_MUL || type == BINARY_OP_DIV;
 }
 
-static inline bool is_logical_binary_op(binary_op_type_t type) {
+inline bool is_logical_binary_op(binary_op_type_t type) {
     return type == BINARY_OP_AND || type == BINARY_OP_OR;
 }
 
-static inline bool is_comparison_binary_op(binary_op_type_t type) {
+inline bool is_comparison_binary_op(binary_op_type_t type) {
     return !is_arithmetic_binary_op(type) && !is_logical_binary_op(type);
 }
 
@@ -78,9 +78,9 @@ expr_t* make_unary_op(unary_op_type_t type, expr_t* arg);
 expr_t* make_bool_literal(bool value);
 expr_t* make_integer_literal(int value);
 expr_t* make_float_literal(double value);
-expr_t* make_string_literal(char* value);
-expr_t* make_variable_use(char* name);
-expr_t* make_function_call(char* name);
+expr_t* make_string_literal(const char* value);
+expr_t* make_variable_use(const char* name);
+expr_t* make_function_call(const char* name);
 
 void destroy_expr(expr_t* expr);
 
@@ -126,8 +126,8 @@ typedef struct statement {
 
 statement_t* make_block_statement();
 statement_t* make_if_condition_statement(expr_t* condition, statement_t* body);
-statement_t* make_variable_declaration(bool constant, char* variable_name);
-statement_t* make_variable_assignment(char* variable_name, expr_t* value);
+statement_t* make_variable_declaration(bool constant, const char* variable_name);
+statement_t* make_variable_assignment(const char* variable_name, expr_t* value);
 statement_t* make_naked_fn_call(expr_t* function_call);
 statement_t* make_while_loop(expr_t* condition, statement_t* body);
 
