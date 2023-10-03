@@ -184,7 +184,6 @@ void execute_statement(context_t* context, statement_t* statement) {
                     .is_constant = false,
             };
 
-            // FIXME: this is not good
             hashmap_set(context->frames[stack_index].variables, &variable);
             break;
         }
