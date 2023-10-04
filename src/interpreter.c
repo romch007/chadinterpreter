@@ -10,7 +10,7 @@ static int variable_compare(const void* a, const void* b, void* udata) {
 
 static uint64_t variable_hash(const void* item, uint64_t seed0, uint64_t seed1) {
     const runtime_variable_t* v = item;
-    return hashmap_sip(v->name, strlen(v->name), seed0, seed1);
+    return hashmap_xxhash3(v->name, strlen(v->name), seed0, seed1);
 }
 
 context_t* create_context() {
@@ -362,12 +362,18 @@ runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type,
                     }
                     result_value.value.integer = lhs_value.value.integer / rhs_value.value.integer;
                     break;
+                case BINARY_OP_MODULO:
+                    result_value.value.integer = lhs_value.value.integer % rhs_value.value.integer;
                 default:
                     break;
             }
 
             return result_value;
         } else {
+            if (op_type == BINARY_OP_MODULO) {
+                printf("ERROR: cannot use modulo on float values\n");
+                exit(EXIT_FAILURE);
+            }
             // Arithmetic operations with floats
             runtime_value_t result_value = {
                     .type = RUNTIME_TYPE_FLOAT};

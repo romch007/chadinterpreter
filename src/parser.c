@@ -214,6 +214,9 @@ expr_t* parse_term(parser_t* parser) {
             case TOKEN_DIV:
                 op_type = BINARY_OP_DIV;
                 break;
+            case TOKEN_MODULO:
+                op_type = BINARY_OP_MODULO;
+                break;
             case TOKEN_AND:
                 op_type = BINARY_OP_AND;
                 break;

@@ -115,6 +115,8 @@ cvector_vector_type(token_t) tokenize(const char* input) {
             } else {
                 token.type = TOKEN_GREATER;
             }
+        } else if (c == '%') {
+            token.type = TOKEN_MODULO;
         } else if (isdigit(c)) {
             bool floating_point = false;
             size_t start = current_pos;

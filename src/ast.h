@@ -20,6 +20,7 @@ typedef enum {
     BINARY_OP_SUB,
     BINARY_OP_MUL,
     BINARY_OP_DIV,
+    BINARY_OP_MODULO,
     BINARY_OP_AND,
     BINARY_OP_OR,
     BINARY_OP_EQUAL,
@@ -31,7 +32,7 @@ typedef enum {
 } binary_op_type_t;
 
 inline bool is_arithmetic_binary_op(binary_op_type_t type) {
-    return type == BINARY_OP_ADD || type == BINARY_OP_SUB || type == BINARY_OP_MUL || type == BINARY_OP_DIV;
+    return type == BINARY_OP_ADD || type == BINARY_OP_SUB || type == BINARY_OP_MUL || type == BINARY_OP_DIV || type == BINARY_OP_MODULO;
 }
 
 inline bool is_logical_binary_op(binary_op_type_t type) {
