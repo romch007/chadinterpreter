@@ -79,7 +79,10 @@ void pop_stack_frame(context_t* context) {
         const runtime_variable_t* variable = item;
         free(variable->name);
         if (variable->content.type == RUNTIME_TYPE_STRING) {
+            // If the variable content is reference-counted, decrement the reference count
             (*variable->content.value.string.reference_count)--;
+
+            // Destroy the content if no reference are held anymore
             if (*variable->content.value.string.reference_count == 0) {
                 free(variable->content.value.string.data);
                 free(variable->content.value.string.reference_count);
@@ -179,6 +182,7 @@ void execute_variable_assignment(context_t* context, statement_t* statement) {
         exit(EXIT_FAILURE);
     }
 
+    // Increment reference count if value content is reference-counted
     if (new_content.type == RUNTIME_TYPE_STRING) {
         (*new_content.value.string.reference_count)++;
     }
@@ -240,6 +244,7 @@ void execute_variable_declaration(context_t* context, statement_t* statement) {
         variable.content = default_value;
     }
 
+    // Increment reference count if value content is reference-counted
     if (variable.content.type == RUNTIME_TYPE_STRING) {
         (*variable.content.value.string.reference_count)++;
     }
