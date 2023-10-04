@@ -109,95 +109,11 @@ void execute_statement(context_t* context, statement_t* statement) {
             break;
         }
         case STATEMENT_VARIABLE_DECL: {
-            char* variable_name = statement->op.variable_declaration.variable_name;
-
-            // Check if this declaration is shadowing a constant variable
-            const runtime_variable_t* old_variable = get_variable(context, variable_name, NULL);
-
-            if (old_variable != NULL && old_variable->is_constant == true) {
-                printf("ERROR: declaration of '%s' is shadowing a constant variable\n", variable_name);
-                exit(EXIT_FAILURE);
-            }
-
-            runtime_variable_t variable = {
-                    .name = copy_alloc(variable_name),
-                    .is_constant = statement->op.variable_declaration.is_constant,
-            };
-
-            char* type_name = statement->op.variable_declaration.type_name;
-
-            if (type_name != NULL) {
-                runtime_type_t default_value_type = string_to_runtime_type(type_name);
-
-                if (default_value_type == -1) {
-                    printf("ERROR: invalid type '%s'\n", type_name);
-                    exit(EXIT_FAILURE);
-                }
-
-                variable.content.type = default_value_type;
-
-                switch (default_value_type) {
-                    case RUNTIME_TYPE_STRING:
-                        init_ref_counted(&variable.content.value.string, NULL);
-                        break;
-                    case RUNTIME_TYPE_INTEGER:
-                        variable.content.value.integer = 0;
-                        break;
-                    case RUNTIME_TYPE_FLOAT:
-                        variable.content.value.floating = 0.0;
-                        break;
-                    case RUNTIME_TYPE_BOOLEAN:
-                        variable.content.value.boolean = false;
-                        break;
-                }
-            } else {
-                runtime_value_t default_value = evaluate_expr(context, statement->op.variable_declaration.value);
-
-                variable.content = default_value;
-            }
-
-            if (variable.content.type == RUNTIME_TYPE_STRING) {
-                (*variable.content.value.string.reference_count)++;
-            }
-
-            hashmap_set(get_current_stack_frame(context)->variables, &variable);
+            execute_variable_declaration(context, statement);
             break;
         }
         case STATEMENT_VARIABLE_ASSIGN: {
-            char* variable_name = statement->op.variable_assignment.variable_name;
-
-            int stack_index;
-
-            const runtime_variable_t* old_variable = get_variable(context, variable_name, &stack_index);
-
-            if (old_variable == NULL) {
-                printf("ERROR: cannot find variable '%s'\n", variable_name);
-                exit(EXIT_FAILURE);
-            }
-
-            if (old_variable->is_constant) {
-                printf("ERROR: variable '%s' is constant\n", variable_name);
-                exit(EXIT_FAILURE);
-            }
-
-            runtime_value_t new_content = evaluate_expr(context, statement->op.variable_assignment.value);
-
-            if (old_variable->content.type != new_content.type) {
-                printf("ERROR: cannot assign value of type %s to variable '%s' of type %s\n", runtime_type_to_string(new_content.type), variable_name, runtime_type_to_string(old_variable->content.type));
-                exit(EXIT_FAILURE);
-            }
-
-            if (new_content.type == RUNTIME_TYPE_STRING) {
-                (*new_content.value.string.reference_count)++;
-            }
-
-            runtime_variable_t variable = {
-                    .name = old_variable->name,
-                    .content = new_content,
-                    .is_constant = false,
-            };
-
-            hashmap_set(context->frames[stack_index].variables, &variable);
+            execute_variable_assignment(context, statement);
             break;
         }
         case STATEMENT_IF_CONDITION: {
@@ -237,6 +153,98 @@ void execute_statement(context_t* context, statement_t* statement) {
             printf("ERROR: cannot execute statement\n");
             abort();
     }
+}
+
+void execute_variable_assignment(context_t* context, statement_t* statement) {
+    char* variable_name = statement->op.variable_assignment.variable_name;
+
+    int stack_index;
+
+    const runtime_variable_t* old_variable = get_variable(context, variable_name, &stack_index);
+
+    if (old_variable == NULL) {
+        printf("ERROR: cannot find variable '%s'\n", variable_name);
+        exit(EXIT_FAILURE);
+    }
+
+    if (old_variable->is_constant) {
+        printf("ERROR: variable '%s' is constant\n", variable_name);
+        exit(EXIT_FAILURE);
+    }
+
+    runtime_value_t new_content = evaluate_expr(context, statement->op.variable_assignment.value);
+
+    if (old_variable->content.type != new_content.type) {
+        printf("ERROR: cannot assign value of type %s to variable '%s' of type %s\n", runtime_type_to_string(new_content.type), variable_name, runtime_type_to_string(old_variable->content.type));
+        exit(EXIT_FAILURE);
+    }
+
+    if (new_content.type == RUNTIME_TYPE_STRING) {
+        (*new_content.value.string.reference_count)++;
+    }
+
+    runtime_variable_t variable = {
+            .name = old_variable->name,
+            .content = new_content,
+            .is_constant = false,
+    };
+
+    hashmap_set(context->frames[stack_index].variables, &variable);
+}
+
+void execute_variable_declaration(context_t* context, statement_t* statement) {
+    char* variable_name = statement->op.variable_declaration.variable_name;
+
+    // Check if this declaration is shadowing a constant variable
+    const runtime_variable_t* old_variable = get_variable(context, variable_name, NULL);
+
+    if (old_variable != NULL && old_variable->is_constant == true) {
+        printf("ERROR: declaration of '%s' is shadowing a constant variable\n", variable_name);
+        exit(EXIT_FAILURE);
+    }
+
+    runtime_variable_t variable = {
+            .name = copy_alloc(variable_name),
+            .is_constant = statement->op.variable_declaration.is_constant,
+    };
+
+    char* type_name = statement->op.variable_declaration.type_name;
+
+    if (type_name != NULL) {
+        runtime_type_t default_value_type = string_to_runtime_type(type_name);
+
+        if (default_value_type == -1) {
+            printf("ERROR: invalid type '%s'\n", type_name);
+            exit(EXIT_FAILURE);
+        }
+
+        variable.content.type = default_value_type;
+
+        switch (default_value_type) {
+            case RUNTIME_TYPE_STRING:
+                init_ref_counted(&variable.content.value.string, NULL);
+                break;
+            case RUNTIME_TYPE_INTEGER:
+                variable.content.value.integer = 0;
+                break;
+            case RUNTIME_TYPE_FLOAT:
+                variable.content.value.floating = 0.0;
+                break;
+            case RUNTIME_TYPE_BOOLEAN:
+                variable.content.value.boolean = false;
+                break;
+        }
+    } else {
+        runtime_value_t default_value = evaluate_expr(context, statement->op.variable_declaration.value);
+
+        variable.content = default_value;
+    }
+
+    if (variable.content.type == RUNTIME_TYPE_STRING) {
+        (*variable.content.value.string.reference_count)++;
+    }
+
+    hashmap_set(get_current_stack_frame(context)->variables, &variable);
 }
 
 const runtime_variable_t* get_variable(context_t* context, const char* variable_name, int* stack_index) {

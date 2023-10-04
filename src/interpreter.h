@@ -47,6 +47,8 @@ void dump_stack_frame(stack_frame_t* frame);
 const runtime_variable_t* get_variable(context_t* context, const char* variable_name, int* stack_index);
 
 void execute_statement(context_t* context, statement_t* statement);
+void execute_variable_declaration(context_t* context, statement_t* statement);
+void execute_variable_assignment(context_t* context, statement_t* statement);
 
 runtime_value_t evaluate_expr(context_t* context, expr_t* expr);
 runtime_value_t evaluate_binary_op(context_t*, binary_op_type_t op_type, expr_t* lhs, expr_t* rhs);
