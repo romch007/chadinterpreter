@@ -40,7 +40,7 @@ void dump_stack_frame(stack_frame_t* frame) {
         printf("%s: %s = ", variable->name, runtime_type_to_string(variable->content.type));
         switch (variable->content.type) {
             case RUNTIME_TYPE_STRING:
-                printf("%s\n", variable->content.value.string ? variable->content.value.string : "(empty)");
+                printf("%s\n", variable->content.value.string.data ? (char*) variable->content.value.string.data : "(empty)");
                 break;
             case RUNTIME_TYPE_INTEGER:
                 printf("%d\n", variable->content.value.integer);
@@ -65,7 +65,7 @@ void destroy_context(context_t* context) {
 
 void push_stack_frame(context_t* context) {
     stack_frame_t frame = {
-        .variables = hashmap_new(sizeof(runtime_variable_t), 0, 0, 0, variable_hash, variable_compare, NULL, NULL),
+            .variables = hashmap_new(sizeof(runtime_variable_t), 0, 0, 0, variable_hash, variable_compare, NULL, NULL),
     };
 
     cvector_push_back(context->frames, frame);
@@ -79,7 +79,11 @@ void pop_stack_frame(context_t* context) {
         const runtime_variable_t* variable = item;
         free(variable->name);
         if (variable->content.type == RUNTIME_TYPE_STRING) {
-            free(variable->content.value.string);
+            (*variable->content.value.string.reference_count)--;
+            if (*variable->content.value.string.reference_count == 0) {
+                free(variable->content.value.string.data);
+                free(variable->content.value.string.reference_count);
+            }
         }
     }
     hashmap_free(frame->variables);
@@ -134,7 +138,7 @@ void execute_statement(context_t* context, statement_t* statement) {
 
                 switch (default_value_type) {
                     case RUNTIME_TYPE_STRING:
-                        variable.content.value.string = NULL;
+                        init_ref_counted(&variable.content.value.string, NULL);
                         break;
                     case RUNTIME_TYPE_INTEGER:
                         variable.content.value.integer = 0;
@@ -150,6 +154,10 @@ void execute_statement(context_t* context, statement_t* statement) {
                 runtime_value_t default_value = evaluate_expr(context, statement->op.variable_declaration.value);
 
                 variable.content = default_value;
+            }
+
+            if (variable.content.type == RUNTIME_TYPE_STRING) {
+                (*variable.content.value.string.reference_count)++;
             }
 
             hashmap_set(get_current_stack_frame(context)->variables, &variable);
@@ -177,6 +185,10 @@ void execute_statement(context_t* context, statement_t* statement) {
             if (old_variable->content.type != new_content.type) {
                 printf("ERROR: cannot assign value of type %s to variable '%s' of type %s\n", runtime_type_to_string(new_content.type), variable_name, runtime_type_to_string(old_variable->content.type));
                 exit(EXIT_FAILURE);
+            }
+
+            if (new_content.type == RUNTIME_TYPE_STRING) {
+                (*new_content.value.string.reference_count)++;
             }
 
             runtime_variable_t variable = {
@@ -231,7 +243,7 @@ const runtime_variable_t* get_variable(context_t* context, const char* variable_
     stack_frame_t* it;
     int i = cvector_size(context->frames) - 1;
     for (it = cvector_end(context->frames); it-- != cvector_begin(context->frames);) {
-        const runtime_variable_t* variable = (const runtime_variable_t *)hashmap_get(it->variables, &(runtime_variable_t){.name = (char*)variable_name});
+        const runtime_variable_t* variable = (const runtime_variable_t*) hashmap_get(it->variables, &(runtime_variable_t){.name = (char*) variable_name});
 
         if (variable != NULL) {
             if (stack_index != NULL) *stack_index = i;
@@ -270,7 +282,9 @@ runtime_value_t evaluate_expr(context_t* context, expr_t* expr) {
         case EXPR_STRING_LITERAL: {
             runtime_value_t value = {
                     .type = RUNTIME_TYPE_STRING,
-                    .value.string = copy_alloc(expr->op.string_literal)};
+            };
+
+            init_ref_counted(&value.value.string, copy_alloc(expr->op.string_literal));
 
             return value;
         }

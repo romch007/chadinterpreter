@@ -2,6 +2,7 @@
 #define PNS_INTERPRETER_INTERPRETER_H
 
 #include "ast.h"
+#include "gc.h"
 #include "hashmap.h"
 #include <stdbool.h>
 
@@ -21,7 +22,7 @@ typedef enum {
 typedef struct {
     runtime_type_t type;
     union {
-        char* string;
+        ref_counted_t string;
         int integer;
         bool boolean;
         double floating;

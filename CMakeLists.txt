@@ -33,6 +33,8 @@ add_library(pns-interpreter
         src/parser.h
         src/runtime_types.h
         src/tokens.h
+        src/gc.h
+        src/gc.c
 )
 
 add_executable(eval src/eval.c)

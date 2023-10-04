@@ -1,2 +1,5 @@
-let a = 5;
-let b = 6;
+let a = 'Hello World!';
+{
+    let c = a;
+}
+let b = a;
