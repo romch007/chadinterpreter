@@ -17,7 +17,7 @@ endif ()
 
 find_package(PkgConfig)
 
-add_library(pns-interpreter
+add_library(pnsinterpreter
         src/ast.c
         src/ast.h
         src/cvector.h
@@ -40,21 +40,30 @@ add_library(pns-interpreter
 add_executable(eval src/eval.c)
 
 if (PKG_CONFIG_FOUND)
-  pkg_check_modules(readline readline)
+    pkg_check_modules(readline IMPORTED_TARGET readline)
 
-  if (readline_FOUND)
-    add_executable(repl src/repl.c)
-    target_link_libraries(repl PRIVATE pns-interpreter readline)
-    if (UNIX)
-      target_compile_options(repl PRIVATE "-Wall")
+    if (readline_FOUND)
+        add_executable(repl src/repl.c)
+        target_link_libraries(repl PRIVATE pnsinterpreter PkgConfig::readline)
+        if (UNIX)
+            target_compile_options(repl PRIVATE "-Wall")
+        endif ()
     endif ()
-  endif ()
+
+    pkg_check_modules(GTK4 IMPORTED_TARGET gtk4)
+
+    if (GTK4_FOUND)
+        add_executable(gui src/gui.c)
+        target_link_libraries(gui PRIVATE pnsinterpreter PkgConfig::GTK4)
+        if (UNIX)
+            target_compile_options(gui PRIVATE "-Wall")
+        endif ()
+    endif ()
 endif ()
 
-
-target_link_libraries(eval PRIVATE pns-interpreter)
+target_link_libraries(eval PRIVATE pnsinterpreter)
 
 if (UNIX)
-    target_compile_options(pns-interpreter PRIVATE "-Wall")
+    target_compile_options(pnsinterpreter PRIVATE "-Wall")
     target_compile_options(eval PRIVATE "-Wall")
 endif ()
