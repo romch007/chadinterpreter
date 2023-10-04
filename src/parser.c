@@ -85,9 +85,13 @@ statement_t* parse_if_condition(parser_t* parser) {
     if (peek(parser, 0)->type == TOKEN_ELSE) {
         consume(parser, 1);
 
-        expect(parser, advance(parser), TOKEN_OPEN_BRACE);
-        if_condition->op.if_condition.body_else = parse_block(parser);
-        expect(parser, advance(parser), TOKEN_CLOSE_BRACE);
+        if (peek(parser, 0)->type == TOKEN_IF) {
+            if_condition->op.if_condition.body_else = parse_if_condition(parser);
+        } else {
+            expect(parser, advance(parser), TOKEN_OPEN_BRACE);
+            if_condition->op.if_condition.body_else = parse_block(parser);
+            expect(parser, advance(parser), TOKEN_CLOSE_BRACE);
+        }
     }
 
     return if_condition;

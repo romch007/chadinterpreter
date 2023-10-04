@@ -106,7 +106,6 @@ void execute_statement(context_t* context, statement_t* statement) {
                 execute_statement(context, current_statement);
             }
 
-            dump_context(context);
             pop_stack_frame(context);
 
             break;

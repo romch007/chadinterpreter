@@ -55,8 +55,6 @@ int main(int argc, char** argv) {
     context_t* context = create_context();
     execute_statement(context, root);
 
-    dump_context(context);
-
     destroy_statement(root);
     destroy_context(context);
     return 0;
