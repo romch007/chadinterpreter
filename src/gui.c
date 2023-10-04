@@ -1,25 +1,22 @@
 #include <gtk/gtk.h>
 
 static void activate(GtkApplication* app, gpointer user_data) {
-    GtkWidget *window;
+    GtkWidget *window = gtk_application_window_new (app);;
 
-    window = gtk_application_window_new (app);
     gtk_window_set_title (GTK_WINDOW (window), "PNS interpreter");
     gtk_window_set_default_size (GTK_WINDOW (window), 1280, 720);
 
-    GtkWidget* grid;
-    grid = gtk_grid_new();
+    GtkWidget* layout = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
 
-    GtkWidget* code;
-    code = gtk_text_view_new();
+    // GtkWidget* code = gtk_text_view_new();
+    // GtkWidget* output = gtk_text_view_new();
+    GtkWidget* code = gtk_button_new_with_label("Test1");
+    GtkWidget* output = gtk_button_new_with_label("Test2");
 
-    GtkWidget* output;
-    output = gtk_text_view_new();
+    gtk_box_append(GTK_BOX(layout), code);
+    gtk_box_append(GTK_BOX(layout), output);
 
-    gtk_grid_attach(GTK_GRID(grid), code, 0, 0, 1, 1);
-    gtk_grid_attach(GTK_GRID(grid), output, 0, 1, 1, 1);
-
-    gtk_window_set_child(GTK_WINDOW(window), grid);
+    gtk_window_set_child(GTK_WINDOW(window), layout);
 
     gtk_widget_set_visible(window, true);
 }
