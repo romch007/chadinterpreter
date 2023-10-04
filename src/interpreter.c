@@ -59,6 +59,7 @@ void destroy_context(context_t* context) {
     for (int i = 0; i < cvector_size(context->frames); i++) {
         pop_stack_frame(context);
     }
+    cvector_free(context->frames);
     free(context);
 }
 
