@@ -1,5 +1,5 @@
-#ifndef PNS_INTERPRETER_GC_H
-#define PNS_INTERPRETER_GC_H
+#ifndef CHAD_INTERPRETER_GC_H
+#define CHAD_INTERPRETER_GC_H
 
 #include "mem.h"
 

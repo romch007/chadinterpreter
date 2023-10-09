@@ -1,5 +1,5 @@
-#ifndef PNS_INTERPRETER_INTERPRETER_H
-#define PNS_INTERPRETER_INTERPRETER_H
+#ifndef CHAD_INTERPRETER_INTERPRETER_H
+#define CHAD_INTERPRETER_INTERPRETER_H
 
 #include "ast.h"
 #include "gc.h"
@@ -15,7 +15,7 @@ typedef struct {
 } context_t;
 
 typedef enum {
-#define PNS_INTERPRETER_RUNTIME_TYPE(A, B) RUNTIME_TYPE_##A,
+#define CHAD_INTERPRETER_RUNTIME_TYPE(A, B) RUNTIME_TYPE_##A,
 #include "runtime_types.h"
 } runtime_type_t;
 

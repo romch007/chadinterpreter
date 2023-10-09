@@ -1,12 +1,12 @@
-#ifndef PNS_INTERPRETER_LEXER_H
-#define PNS_INTERPRETER_LEXER_H
+#ifndef CHAD_INTERPRETER_LEXER_H
+#define CHAD_INTERPRETER_LEXER_H
 
 #include "cvector.h"
 #include <stdbool.h>
 #include <stddef.h>
 
 typedef enum {
-#define PNS_INTERPRETER_TOKEN(X) TOKEN_##X,
+#define CHAD_INTERPRETER_TOKEN(X) TOKEN_##X,
 #include "tokens.h"
 } token_type_t;
 

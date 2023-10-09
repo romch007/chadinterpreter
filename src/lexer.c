@@ -182,10 +182,10 @@ cvector_vector_type(token_t) tokenize(const char* input) {
             }
 
             if (!keep) free(substr);
-        } else if (c == '\'') {
+        } else if (c == '"') {
             size_t start = current_pos;
 
-            while (peek(1) != '\'') current_pos++;
+            while (peek(1) != '"') current_pos++;
             start++;
 
             size_t len = (current_pos - start) + 1;
@@ -208,7 +208,7 @@ cvector_vector_type(token_t) tokenize(const char* input) {
 
 const char* token_type_to_string(token_type_t type) {
     switch (type) {
-#define PNS_INTERPRETER_TOKEN(X) \
+#define CHAD_INTERPRETER_TOKEN(X) \
     case TOKEN_##X:              \
         return #X;
 #include "tokens.h"

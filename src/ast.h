@@ -1,5 +1,5 @@
-#ifndef PNS_INTERPRETER_AST_H
-#define PNS_INTERPRETER_AST_H
+#ifndef CHAD_INTERPRETER_AST_H
+#define CHAD_INTERPRETER_AST_H
 
 #include "cvector.h"
 #include <stdbool.h>

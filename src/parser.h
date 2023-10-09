@@ -1,5 +1,5 @@
-#ifndef PNS_INTERPRETER_PARSER_H
-#define PNS_INTERPRETER_PARSER_H
+#ifndef CHAD_INTERPRETER_PARSER_H
+#define CHAD_INTERPRETER_PARSER_H
 
 #include "ast.h"
 #include "lexer.h"
