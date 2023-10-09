@@ -130,10 +130,28 @@ statement_t* parse_variable_declaration(parser_t* parser) {
 statement_t* parse_variable_assignment(parser_t* parser) {
     token_t* ident_variable_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
     char* variable_name = ident_variable_name->value.str;
+    expr_t* value = NULL;
 
-    expect(parser, advance(parser), TOKEN_EQUAL);
+    if (peek(parser, 0)->type == TOKEN_PLUS_EQUAL) {
+        consume(parser, 1);
 
-    expr_t* value = parse_expression(parser);
+        value = make_binary_op(BINARY_OP_ADD, make_variable_use(variable_name), parse_expression(parser));
+    } else if (peek(parser, 0)->type == TOKEN_MINUS_EQUAL) {
+        consume(parser, 1);
+
+        value = make_binary_op(BINARY_OP_SUB, make_variable_use(variable_name), parse_expression(parser));
+    } else if (peek(parser, 0)->type == TOKEN_MUL_EQUAL) {
+        consume(parser, 1);
+
+        value = make_binary_op(BINARY_OP_MUL, make_variable_use(variable_name), parse_expression(parser));
+    } else if (peek(parser, 0)->type == TOKEN_DIV_EQUAL) {
+        consume(parser, 1);
+
+        value = make_binary_op(BINARY_OP_DIV, make_variable_use(variable_name), parse_expression(parser));
+    } else {
+        expect(parser, advance(parser), TOKEN_EQUAL);
+        value = parse_expression(parser);
+    }
 
     expect(parser, advance(parser), TOKEN_SEMICOLON);
 

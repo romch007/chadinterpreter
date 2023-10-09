@@ -51,18 +51,36 @@ cvector_vector_type(token_t) tokenize(const char* input) {
         if (is_blank(c)) {
             ignore = true;
         } else if (c == '+') {
-            token.type = TOKEN_PLUS;
+            if (peek(1) == '=') {
+                current_pos++;
+                token.type = TOKEN_PLUS_EQUAL;
+            } else {
+                token.type = TOKEN_PLUS;
+            }
         } else if (c == '-') {
             if (peek(1) == '>') {
                 current_pos++;
                 token.type = TOKEN_ARROW;
+            }  else if (peek(1) == '=') {
+                current_pos++;
+                token.type = TOKEN_MINUS_EQUAL;
             } else {
                 token.type = TOKEN_MINUS;
             }
         } else if (c == '*') {
-            token.type = TOKEN_MUL;
+            if (peek(1) == '=') {
+                current_pos++;
+                token.type = TOKEN_MUL_EQUAL;
+            } else {
+                token.type = TOKEN_MUL;
+            }
         } else if (c == '/') {
-            token.type = TOKEN_DIV;
+            if (peek(1) == '=') {
+                current_pos++;
+                token.type = TOKEN_DIV_EQUAL;
+            } else {
+                token.type = TOKEN_DIV;
+            }
         } else if (c == '!') {
             if (peek(1) == '=') {
                 current_pos++;
@@ -116,7 +134,12 @@ cvector_vector_type(token_t) tokenize(const char* input) {
                 token.type = TOKEN_GREATER;
             }
         } else if (c == '%') {
-            token.type = TOKEN_MODULO;
+            if (peek(1) == '=') {
+                current_pos++;
+                token.type = TOKEN_MODULO_EQUAL;
+            } else {
+                token.type = TOKEN_MODULO;
+            }
         } else if (isdigit(c)) {
             bool floating_point = false;
             size_t start = current_pos;

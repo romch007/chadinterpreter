@@ -7,6 +7,14 @@ cmake -S . -B build
 cmake --build build --parallel
 ```
 
+## Features
+
+- [x] Variables
+- [x] Types (`str`, `bool`, `int`, `float`)
+- [x] Flow control (`if`, `else if`, `else`, `while`)
+- [x] Reference counted strings
+- [ ] Functions
+
 ## How to use the language
 
 Variable declarations:
@@ -25,12 +33,12 @@ let i = 8;
 if (i < 7) {
     i = 0;
 } else if (i == 8) {
-    i = i + 1;
+    i += 1;
 } else {
     i = -12;
 }
 
 while (i < 100) {
-    i = i + 1;
+    i += 1;
 }
 ```
