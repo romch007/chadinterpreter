@@ -61,7 +61,7 @@ cvector_vector_type(token_t) tokenize(const char* input) {
             if (peek(1) == '>') {
                 current_pos++;
                 token.type = TOKEN_ARROW;
-            }  else if (peek(1) == '=') {
+            } else if (peek(1) == '=') {
                 current_pos++;
                 token.type = TOKEN_MINUS_EQUAL;
             } else {
@@ -232,7 +232,7 @@ cvector_vector_type(token_t) tokenize(const char* input) {
 const char* token_type_to_string(token_type_t type) {
     switch (type) {
 #define CHAD_INTERPRETER_TOKEN(X) \
-    case TOKEN_##X:              \
+    case TOKEN_##X:               \
         return #X;
 #include "tokens.h"
     }

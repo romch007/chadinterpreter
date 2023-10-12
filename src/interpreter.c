@@ -526,8 +526,8 @@ runtime_value_t evaluate_unary_op(context_t* context, unary_op_type_t op_type, e
 
 runtime_type_t string_to_runtime_type(const char* str) {
 #define CHAD_INTERPRETER_RUNTIME_TYPE(A, B) \
-    if (strcmp(str, #B) == 0) {            \
-        return RUNTIME_TYPE_##A;           \
+    if (strcmp(str, #B) == 0) {             \
+        return RUNTIME_TYPE_##A;            \
     }
 #include "runtime_types.h"
     return -1;
@@ -536,7 +536,7 @@ runtime_type_t string_to_runtime_type(const char* str) {
 const char* runtime_type_to_string(runtime_type_t type) {
     switch (type) {
 #define CHAD_INTERPRETER_RUNTIME_TYPE(A, B) \
-    case RUNTIME_TYPE_##A:                 \
+    case RUNTIME_TYPE_##A:                  \
         return #B;
 #include "runtime_types.h"
     }

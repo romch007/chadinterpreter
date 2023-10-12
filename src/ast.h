@@ -83,6 +83,8 @@ expr_t* make_string_literal(const char* value);
 expr_t* make_variable_use(const char* name);
 expr_t* make_function_call(const char* name);
 
+void dump_expr(expr_t* expr, int indent);
+
 void destroy_expr(expr_t* expr);
 
 typedef enum {
@@ -131,6 +133,8 @@ statement_t* make_variable_declaration(bool constant, const char* variable_name)
 statement_t* make_variable_assignment(const char* variable_name, expr_t* value);
 statement_t* make_naked_fn_call(expr_t* function_call);
 statement_t* make_while_loop(expr_t* condition, statement_t* body);
+
+void dump_statement(statement_t* statement, int indent);
 
 void destroy_statement(statement_t* statement);
 

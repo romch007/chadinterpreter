@@ -5,6 +5,7 @@
 #include "parser.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 static char* read_file_content(char* filename) {
     FILE* file = fopen(filename, "r");
@@ -33,7 +34,29 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    char* content = read_file_content(argv[1]);
+    bool should_print_ast = false;
+
+    int opt;
+
+    while ((opt = getopt(argc, argv, ":ah")) != -1) {
+        switch (opt) {
+            case 'a':
+                should_print_ast = true;
+                break;
+            case 'h':
+                printf("Usage: eval [file]\n");
+                printf("  -h: print help\n");
+                printf("  -a: dump AST\n");
+                return 0;
+            case '?':
+                printf("ERROR: unknown option %c\n", optopt);
+                return 1;
+            default:
+                break;
+        }
+    }
+
+    char* content = read_file_content(argv[optind]);
 
     // Lexing
     cvector_vector_type(token_t) tokens = tokenize(content);
@@ -50,6 +73,12 @@ int main(int argc, char** argv) {
 
     cvector_set_elem_destructor(tokens, vector_token_deleter);
     cvector_free(tokens);
+
+    if (should_print_ast) {
+        printf("--- AST dump ---\n");
+        dump_statement(root, 0);
+        printf("----------------\n");
+    }
 
     // Runtime
     context_t* context = create_context();
