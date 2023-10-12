@@ -14,6 +14,8 @@ static void vector_expr_deleter(void* element) {
     destroy_expr(expr);
 }
 
+static int indent_offset = 2;
+
 static void print_indent(int indent) {
     for (int i = 0; i < indent; i++) {
         printf(" ");
@@ -23,6 +25,28 @@ static void print_indent(int indent) {
 extern inline bool is_arithmetic_binary_op(binary_op_type_t type);
 extern inline bool is_logical_binary_op(binary_op_type_t type);
 extern inline bool is_comparison_binary_op(binary_op_type_t type);
+
+const char* binary_op_to_symbol(binary_op_type_t op_type) {
+    switch (op_type) {
+#define CHAD_INTERPRETER_BINARY_OP(X, Y) \
+    case BINARY_OP_##X:                  \
+        return #Y;
+#include "binary_ops.h"
+    }
+    return NULL;
+}
+
+
+const char* unary_op_to_symbol(unary_op_type_t
+                                       op_type) {
+    switch (op_type) {
+#define CHAD_INTERPRETER_UNARY_OP(X, Y) \
+    case UNARY_OP_##X:                  \
+        return #Y;
+#include "unary_ops.h"
+    }
+    return NULL;
+}
 
 expr_t* make_binary_op(binary_op_type_t type, expr_t* lhs, expr_t* rhs) {
     expr_t* expr = xmalloc(sizeof(expr_t));
@@ -89,15 +113,16 @@ void dump_expr(expr_t* expr, int indent) {
         case EXPR_BINARY_OPT:
             print_indent(indent);
             printf("BinaryOperation\n");
-            dump_expr(expr->op.binary.lhs, indent + 1);
-            // TODO: print op sign
-            dump_expr(expr->op.binary.rhs, indent + 1);
+            dump_expr(expr->op.binary.lhs, indent + indent_offset);
+            print_indent(indent + indent_offset);
+            printf("%s\n", binary_op_to_symbol(expr->op.binary.type));
+            dump_expr(expr->op.binary.rhs, indent + indent_offset);
             break;
         case EXPR_UNARY_OPT:
             print_indent(indent);
             printf("UnaryOperation\n");
-            // TODO: print op sign
-            dump_expr(expr->op.unary.arg, indent + 1);
+            printf("%s\n", unary_op_to_symbol(expr->op.unary.type));
+            dump_expr(expr->op.unary.arg, indent + indent_offset);
             break;
         case EXPR_BOOL_LITERAL:
             print_indent(indent);
@@ -210,7 +235,7 @@ void dump_statement(statement_t* statement, int indent) {
             printf("(Block)\n");
             statement_t** it;
             for (it = cvector_begin(statement->op.block.statements); it != cvector_end(statement->op.block.statements); ++it) {
-                dump_statement(*it, indent + 1);
+                dump_statement(*it, indent + indent_offset);
             }
             break;
         }
@@ -219,33 +244,37 @@ void dump_statement(statement_t* statement, int indent) {
             printf("IfStatement\n");
             print_indent(indent);
             printf("If\n");
-            dump_expr(statement->op.if_condition.condition, indent + 1);
-            dump_statement(statement->op.if_condition.body, indent + 1);
+            dump_expr(statement->op.if_condition.condition, indent + indent_offset);
+            dump_statement(statement->op.if_condition.body, indent + indent_offset);
             if (statement->op.if_condition.body_else != NULL) {
                 print_indent(indent);
                 printf("Else\n");
-                dump_statement(statement->op.if_condition.body_else, indent + 1);
+                dump_statement(statement->op.if_condition.body_else, indent + indent_offset);
             }
             break;
         case STATEMENT_VARIABLE_DECL:
             print_indent(indent);
             printf("VariableDeclaration\n");
-            print_indent(indent + 1);
+            print_indent(indent + indent_offset);
             printf("%s\n", statement->op.variable_declaration.is_constant ? "Const" : "Let");
-            print_indent(indent + 1);
+            print_indent(indent + indent_offset);
             printf("Identifier %s\n", statement->op.variable_declaration.variable_name);
-            dump_expr(statement->op.variable_declaration.value, indent + 1);
+            dump_expr(statement->op.variable_declaration.value, indent + indent_offset);
             break;
         case STATEMENT_VARIABLE_ASSIGN:
             print_indent(indent);
             printf("VariableAssignment\n");
-            print_indent(indent + 1);
+            print_indent(indent + indent_offset);
             printf("Identifier %s\n", statement->op.variable_assignment.variable_name);
-            dump_expr(statement->op.variable_assignment.value, indent + 1);
+            dump_expr(statement->op.variable_assignment.value, indent + indent_offset);
             break;
         case STATEMENT_NAKED_FN_CALL:
             break;
         case STATEMENT_WHILE_LOOP:
+            print_indent(indent);
+            printf("While\n");
+            dump_expr(statement->op.while_loop.condition, indent + indent_offset);
+            dump_statement(statement->op.while_loop.body, indent + indent_offset);
             break;
     }
 }

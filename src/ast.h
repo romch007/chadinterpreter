@@ -16,19 +16,8 @@ typedef enum {
 } expr_type_t;
 
 typedef enum {
-    BINARY_OP_ADD,
-    BINARY_OP_SUB,
-    BINARY_OP_MUL,
-    BINARY_OP_DIV,
-    BINARY_OP_MODULO,
-    BINARY_OP_AND,
-    BINARY_OP_OR,
-    BINARY_OP_EQUAL,
-    BINARY_OP_NOT_EQUAL,
-    BINARY_OP_GREATER,
-    BINARY_OP_GREATER_EQUAL,
-    BINARY_OP_LESS,
-    BINARY_OP_LESS_EQUAL,
+#define CHAD_INTERPRETER_BINARY_OP(X, Y) BINARY_OP_ ## X,
+#include "binary_ops.h"
 } binary_op_type_t;
 
 inline bool is_arithmetic_binary_op(binary_op_type_t type) {
@@ -43,10 +32,14 @@ inline bool is_comparison_binary_op(binary_op_type_t type) {
     return !is_arithmetic_binary_op(type) && !is_logical_binary_op(type);
 }
 
+const char* binary_op_to_symbol(binary_op_type_t op_type);
+
 typedef enum {
-    UNARY_OP_NEG,
-    UNARY_OP_NOT,
+#define CHAD_INTERPRETER_UNARY_OP(X, Y) UNARY_OP_ ## X,
+#include "unary_ops.h"
 } unary_op_type_t;
+
+const char* unary_op_to_symbol(unary_op_type_t op_type);
 
 typedef struct expr {
     expr_type_t type;

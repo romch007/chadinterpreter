@@ -35,6 +35,8 @@ add_library(chadinterpreter
         src/parser.h
         src/runtime_types.h
         src/tokens.h
+        src/binary_ops.h
+        src/unary_ops.h
         src/gc.h
         src/gc.c
 )
