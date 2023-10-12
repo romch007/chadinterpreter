@@ -121,6 +121,7 @@ void dump_expr(expr_t* expr, int indent) {
         case EXPR_UNARY_OPT:
             print_indent(indent);
             printf("UnaryOperation\n");
+            print_indent(indent + indent_offset);
             printf("%s\n", unary_op_to_symbol(expr->op.unary.type));
             dump_expr(expr->op.unary.arg, indent + indent_offset);
             break;
