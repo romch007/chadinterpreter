@@ -36,6 +36,7 @@ cvector_vector_type(token_t) tokenize(const char* input) {
     s_input = input;
     input_len = strlen(input);
     cvector_vector_type(token_t) tokens = NULL;
+    int current_line = 1;
 
     for (;;) {
         char c = peek(0);
@@ -48,7 +49,10 @@ cvector_vector_type(token_t) tokenize(const char* input) {
             break;
         }
 
-        if (is_blank(c)) {
+        if (c == '\n') {
+            current_line++;
+            ignore = true;
+        } else if (is_blank(c)) {
             ignore = true;
         } else if (c == '+') {
             if (peek(1) == '=') {
@@ -216,9 +220,11 @@ cvector_vector_type(token_t) tokenize(const char* input) {
             token.value.str = extract_substr(input, start, len);
             current_pos++;
         } else {
-            printf("ERROR: invalid character %c", c);
+            printf("ERROR: invalid character %c, line %d", c, current_line);
             exit(EXIT_FAILURE);
         }
+
+        token.line_nb = current_line;
 
         if (!ignore)
             cvector_push_back(tokens, token);

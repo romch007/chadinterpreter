@@ -19,7 +19,7 @@ static token_t* expect(parser_t* parser, token_t* token, token_type_t type) {
     if (token == NULL)
         token = peek(parser, 0);
     if (token->type != type) {
-        printf("ERROR: invalid token type, expected %s but got %s\n", token_type_to_string(type), token_type_to_string(token->type));
+        printf("ERROR: invalid token type line %d, expected %s but got %s\n", token->line_nb, token_type_to_string(type), token_type_to_string(token->type));
         exit(EXIT_FAILURE);
     }
     return token;

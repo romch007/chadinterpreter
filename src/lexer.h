@@ -12,6 +12,7 @@ typedef enum {
 
 typedef struct {
     token_type_t type;
+    int line_nb;
     union {
         char* str;
         int integer;
