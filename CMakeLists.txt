@@ -18,6 +18,7 @@ endif ()
 option(USE_JEMALLOC "Use jemalloc for heap allocation" OFF)
 
 find_package(PkgConfig REQUIRED)
+include(CheckSymbolExists)
 
 add_library(chadinterpreter
         src/ast.c
@@ -43,6 +44,11 @@ add_library(chadinterpreter
 
 add_executable(eval src/eval.c)
 
+check_symbol_exists(getopt "unistd.h" HAVE_GETOPT)
+
+if (HAVE_GETOPT)
+    target_compile_definitions(eval PRIVATE HAVE_GETOPT)
+endif ()
 
 if (USE_JEMALLOC)
     pkg_check_modules(jemalloc REQUIRED IMPORTED_TARGET jemalloc)
