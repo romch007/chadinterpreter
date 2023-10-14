@@ -106,7 +106,7 @@ static int getopt(int argc, char* const argv[], const char* optstring) {
 
 
 static char* read_file_content(char* filename) {
-    FILE* file = fopen(filename, "r");
+    FILE* file = fopen(filename, "rb");
 
     if (file == NULL) {
         printf("ERROR: file not found\n");
