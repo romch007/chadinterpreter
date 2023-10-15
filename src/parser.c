@@ -53,6 +53,16 @@ statement_t* parse_block(parser_t* parser) {
             case TOKEN_WHILE:
                 statement = parse_while_loop(parser);
                 break;
+            case TOKEN_BREAK:
+                consume(parser, 1);
+                statement = make_break_statement();
+                expect(parser, advance(parser), TOKEN_SEMICOLON);
+                break;
+            case TOKEN_CONTINUE:
+                consume(parser, 1);
+                statement = make_continue_statement();
+                expect(parser, advance(parser), TOKEN_SEMICOLON);
+                break;
             case TOKEN_OPEN_BRACE:
                 expect(parser, advance(parser), TOKEN_OPEN_BRACE);
                 statement = parse_block(parser);

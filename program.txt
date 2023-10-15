@@ -1,2 +1,5 @@
 let i = 0;
-i += 10;
+while (false) {
+    i += 10;
+    break;
+}

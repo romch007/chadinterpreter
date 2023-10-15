@@ -5,6 +5,7 @@
 #include "parser.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #ifdef HAVE_GETOPT
 #include <unistd.h>
@@ -100,8 +101,6 @@ static int getopt(int argc, char* const argv[], const char* optstring) {
     }
     return c;
 }
-
-
 #endif
 
 
@@ -109,7 +108,7 @@ static char* read_file_content(char* filename) {
     FILE* file = fopen(filename, "rb");
 
     if (file == NULL) {
-        printf("ERROR: file not found\n");
+        printf("ERROR: cannot open file: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 

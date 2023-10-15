@@ -196,6 +196,10 @@ cvector_vector_type(token_t) tokenize(const char* input) {
                 token.type = TOKEN_LET;
             } else if (strcmp(substr, "const") == 0) {
                 token.type = TOKEN_CONST;
+            } else if (strcmp(substr, "break") == 0) {
+                token.type = TOKEN_BREAK;
+            } else if (strcmp(substr, "continue") == 0) {
+                token.type = TOKEN_CONTINUE;
             } else if (strcmp(substr, "true") == 0) {
                 token.type = TOKEN_BOOL_LITERAL;
                 token.value.boolean = true;

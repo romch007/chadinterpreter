@@ -229,6 +229,18 @@ statement_t* make_while_loop(expr_t* condition, statement_t* body) {
     return statement;
 }
 
+statement_t* make_break_statement() {
+    statement_t* statement = xmalloc(sizeof(statement_t));
+    statement->type = STATEMENT_BREAK;
+    return statement;
+}
+
+statement_t* make_continue_statement() {
+    statement_t* statement = xmalloc(sizeof(statement_t));
+    statement->type = STATEMENT_CONTINUE;
+    return statement;
+}
+
 void dump_statement(statement_t* statement, int indent) {
     switch (statement->type) {
         case STATEMENT_BLOCK: {
@@ -276,6 +288,14 @@ void dump_statement(statement_t* statement, int indent) {
             printf("While\n");
             dump_expr(statement->op.while_loop.condition, indent + indent_offset);
             dump_statement(statement->op.while_loop.body, indent + indent_offset);
+            break;
+        case STATEMENT_BREAK:
+            print_indent(indent);
+            printf("BreakStatement\n");
+            break;
+        case STATEMENT_CONTINUE:
+            print_indent(indent);
+            printf("ContinueStatement\n");
             break;
     }
 }

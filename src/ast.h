@@ -87,6 +87,8 @@ typedef enum {
     STATEMENT_VARIABLE_ASSIGN,
     STATEMENT_NAKED_FN_CALL,
     STATEMENT_WHILE_LOOP,
+    STATEMENT_BREAK,
+    STATEMENT_CONTINUE,
 } statement_type_t;
 
 typedef struct statement {
@@ -126,6 +128,8 @@ statement_t* make_variable_declaration(bool constant, const char* variable_name)
 statement_t* make_variable_assignment(const char* variable_name, expr_t* value);
 statement_t* make_naked_fn_call(expr_t* function_call);
 statement_t* make_while_loop(expr_t* condition, statement_t* body);
+statement_t* make_break_statement();
+statement_t* make_continue_statement();
 
 void dump_statement(statement_t* statement, int indent);
 
