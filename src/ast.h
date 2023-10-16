@@ -105,7 +105,6 @@ typedef struct statement {
         struct {
             bool is_constant;
             char* variable_name;
-            char* type_name;
             expr_t* value;
         } variable_declaration;
         struct {

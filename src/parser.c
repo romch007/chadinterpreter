@@ -116,19 +116,8 @@ statement_t* parse_variable_declaration(parser_t* parser) {
 
     statement_t* variable_declaration = make_variable_declaration(constant, variable_name);
 
-    if (peek(parser, 0)->type == TOKEN_COLON) {
-        // There is a type
+    if (peek(parser, 1)->type == TOKEN_EQUAL) {
         consume(parser, 1);
-
-        token_t* ident_type_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
-
-        variable_declaration->op.variable_declaration.type_name = copy_alloc(ident_type_name->value.str);
-    }
-
-    if (peek(parser, 0)->type == TOKEN_EQUAL) {
-        // There is a default value
-        consume(parser, 1);
-
         variable_declaration->op.variable_declaration.value = parse_expression(parser);
     }
 

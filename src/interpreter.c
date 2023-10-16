@@ -211,32 +211,8 @@ void execute_variable_declaration(context_t* context, statement_t* statement) {
             .is_constant = statement->op.variable_declaration.is_constant,
     };
 
-    char* type_name = statement->op.variable_declaration.type_name;
-
-    if (type_name != NULL) {
-        runtime_type_t default_value_type = string_to_runtime_type(type_name);
-
-        if (default_value_type == -1) {
-            printf("ERROR: invalid type '%s'\n", type_name);
-            exit(EXIT_FAILURE);
-        }
-
-        variable.content.type = default_value_type;
-
-        switch (default_value_type) {
-            case RUNTIME_TYPE_STRING:
-                init_ref_counted(&variable.content.value.string, NULL);
-                break;
-            case RUNTIME_TYPE_INTEGER:
-                variable.content.value.integer = 0;
-                break;
-            case RUNTIME_TYPE_FLOAT:
-                variable.content.value.floating = 0.0;
-                break;
-            case RUNTIME_TYPE_BOOLEAN:
-                variable.content.value.boolean = false;
-                break;
-        }
+    if (statement->op.variable_declaration.value == NULL) {
+        variable.content.type = RUNTIME_TYPE_NULL;
     } else {
         runtime_value_t default_value = evaluate_expr(context, statement->op.variable_declaration.value);
 
