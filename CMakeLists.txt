@@ -15,9 +15,6 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
             "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif ()
 
-option(USE_JEMALLOC "Use jemalloc for heap allocation" OFF)
-
-find_package(PkgConfig REQUIRED)
 include(CheckSymbolExists)
 
 add_library(chadinterpreter
@@ -55,12 +52,6 @@ endif ()
 
 if (HAVE_GETOPT)
     target_compile_definitions(eval PRIVATE HAVE_GETOPT)
-endif ()
-
-if (USE_JEMALLOC)
-    pkg_check_modules(jemalloc REQUIRED IMPORTED_TARGET jemalloc)
-    target_link_libraries(eval PRIVATE PkgConfig::jemalloc)
-    target_compile_definitions(eval PRIVATE USE_JEMALLOC)
 endif ()
 
 target_link_libraries(eval PRIVATE chadinterpreter)
