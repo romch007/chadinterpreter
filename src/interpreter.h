@@ -6,15 +6,6 @@
 #include "hashmap.h"
 #include <stdbool.h>
 
-typedef struct {
-    struct hashmap* variables;
-    struct hashmap* functions;
-} stack_frame_t;
-
-typedef struct {
-    cvector_vector_type(stack_frame_t) frames;
-} context_t;
-
 typedef enum {
 #define CHAD_INTERPRETER_RUNTIME_TYPE(A, B) RUNTIME_TYPE_##A,
 #include "runtime_types.h"
@@ -35,6 +26,20 @@ typedef struct {
     bool is_constant;
     runtime_value_t content;
 } runtime_variable_t;
+
+typedef struct {
+    struct hashmap* variables;
+    struct hashmap* functions;
+} stack_frame_t;
+
+typedef struct {
+    cvector_vector_type(stack_frame_t) frames;
+    bool should_break_loop;
+    bool should_continue_loop;
+    bool should_return_fn;
+    bool has_return_value;
+    runtime_value_t return_value;
+} context_t;
 
 context_t* create_context();
 void destroy_context(context_t* context);

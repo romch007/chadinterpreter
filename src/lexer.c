@@ -82,6 +82,13 @@ cvector_vector_type(token_t) tokenize(const char* input) {
             if (peek(1) == '=') {
                 current_pos++;
                 token.type = TOKEN_DIV_EQUAL;
+            } else if (peek(1) == '/') {
+                // Line comment
+                char next;
+                do {
+                    current_pos++;
+                    next = peek(1);
+                } while (next != '\0' && next != '\n');
             } else {
                 token.type = TOKEN_DIV;
             }
@@ -200,12 +207,16 @@ cvector_vector_type(token_t) tokenize(const char* input) {
                 token.type = TOKEN_BREAK;
             } else if (strcmp(substr, "continue") == 0) {
                 token.type = TOKEN_CONTINUE;
+            } else if (strcmp(substr, "return") == 0) {
+                token.type = TOKEN_RETURN;
             } else if (strcmp(substr, "true") == 0) {
                 token.type = TOKEN_BOOL_LITERAL;
                 token.value.boolean = true;
             } else if (strcmp(substr, "false") == 0) {
                 token.type = TOKEN_BOOL_LITERAL;
                 token.value.boolean = false;
+            } else if (strcmp(substr, "null") == 0) {
+                token.type = TOKEN_NULL;
             } else {
                 token.type = TOKEN_IDENTIFIER;
                 token.value.str = substr;

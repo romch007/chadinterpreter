@@ -66,6 +66,9 @@ statement_t* parse_block(parser_t* parser) {
                 statement = make_continue_statement();
                 expect(parser, advance(parser), TOKEN_SEMICOLON);
                 break;
+            case TOKEN_RETURN:
+                statement = parse_return_statement(parser);
+                break;
             case TOKEN_OPEN_BRACE:
                 expect(parser, advance(parser), TOKEN_OPEN_BRACE);
                 statement = parse_block(parser);
@@ -204,6 +207,20 @@ statement_t* parse_while_loop(parser_t* parser) {
     return make_while_loop(condition, body);
 }
 
+statement_t* parse_return_statement(parser_t* parser) {
+    expect(parser, advance(parser), TOKEN_RETURN);
+
+    statement_t* return_stmt = make_return_statement();
+
+    if (peek(parser, 0)->type != TOKEN_SEMICOLON) {
+        return_stmt->op.return_statement.value = parse_expression(parser);
+    }
+
+    expect(parser, advance(parser), TOKEN_SEMICOLON);
+
+    return return_stmt;
+}
+
 expr_t* parse_expression(parser_t* parser) {
     expr_t* expr = parse_term(parser);
 
@@ -307,6 +324,10 @@ expr_t* parse_factor(parser_t* parser) {
         case TOKEN_STR_LITERAL:
             consume(parser, 1);
             expr = make_string_literal(token->value.str);
+            break;
+        case TOKEN_NULL:
+            consume(parser, 1);
+            expr = make_null();
             break;
         case TOKEN_IDENTIFIER:
             if (peek(parser, 1)->type == TOKEN_OPEN_PAREN) {

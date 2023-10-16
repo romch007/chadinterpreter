@@ -11,6 +11,7 @@ typedef enum {
     EXPR_INT_LITERAL,
     EXPR_FLOAT_LITERAL,
     EXPR_STRING_LITERAL,
+    EXPR_NULL,
     EXPR_VARIABLE_USE,
     EXPR_FUNCTION_CALL,
 } expr_type_t;
@@ -73,6 +74,7 @@ expr_t* make_bool_literal(bool value);
 expr_t* make_integer_literal(int value);
 expr_t* make_float_literal(double value);
 expr_t* make_string_literal(const char* value);
+expr_t* make_null();
 expr_t* make_variable_use(const char* name);
 expr_t* make_function_call(const char* name);
 
@@ -90,6 +92,7 @@ typedef enum {
     STATEMENT_WHILE_LOOP,
     STATEMENT_BREAK,
     STATEMENT_CONTINUE,
+    STATEMENT_RETURN,
 } statement_type_t;
 
 typedef struct statement {
@@ -124,6 +127,9 @@ typedef struct statement {
             expr_t* condition;
             struct statement* body;
         } while_loop;
+        struct {
+            expr_t* value;
+        } return_statement;
     } op;
 } statement_t;
 
@@ -136,6 +142,7 @@ statement_t* make_naked_fn_call(expr_t* function_call);
 statement_t* make_while_loop(expr_t* condition, statement_t* body);
 statement_t* make_break_statement();
 statement_t* make_continue_statement();
+statement_t* make_return_statement();
 
 void dump_statement(statement_t* statement, int indent);
 

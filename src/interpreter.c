@@ -1,7 +1,6 @@
 #include "interpreter.h"
 #include "mem.h"
 
-void print_value(const runtime_value_t* value);
 static int variable_compare(const void* a, const void* b, void* udata) {
     const runtime_variable_t* va = a;
     const runtime_variable_t* vb = b;
@@ -29,6 +28,9 @@ static uint64_t function_hash(const void* item, uint64_t seed0, uint64_t seed1) 
 context_t* create_context() {
     context_t* context = xmalloc(sizeof(context_t));
     context->frames = NULL;
+    context->should_break_loop = false;
+    context->should_continue_loop = false;
+    context->should_return_fn = false;
     return context;
 }
 
@@ -81,7 +83,7 @@ void destroy_value(const runtime_value_t* value) {
         (*value->value.string.reference_count)--;
 
         // Destroy the content if no reference are held anymore
-        if (*value->value.string.reference_count < 0) {
+        if (*value->value.string.reference_count <= 0) {
             free(value->value.string.data);
             free(value->value.string.reference_count);
         }
@@ -130,6 +132,9 @@ void execute_statement(context_t* context, statement_t* statement) {
             for (it = cvector_begin(statements); it != cvector_end(statements); ++it) {
                 statement_t* current_statement = *it;
                 execute_statement(context, current_statement);
+
+                if (context->should_break_loop || context->should_continue_loop || context->should_return_fn)
+                    break;
             }
 
             break;
@@ -180,11 +185,33 @@ void execute_statement(context_t* context, statement_t* statement) {
             while (condition.value.boolean) {
                 execute_statement(context, statement->op.while_loop.body);
 
+                if (context->should_break_loop) {
+                    context->should_break_loop = false;
+                    break;
+                } else if (context->should_continue_loop) {
+                    context->should_continue_loop = false;
+                }
+
                 condition = evaluate_expr(context, statement->op.while_loop.condition);
             }
             pop_stack_frame(context);
             break;
         }
+        case STATEMENT_BREAK:
+            context->should_break_loop = true;
+            break;
+        case STATEMENT_CONTINUE:
+            context->should_continue_loop = true;
+            break;
+        case STATEMENT_RETURN:
+            context->should_return_fn = true;
+            if (statement->op.return_statement.value != NULL) {
+                runtime_value_t return_value = evaluate_expr(context, statement->op.return_statement.value);
+
+                context->has_return_value = true;
+                context->return_value = return_value;
+            }
+            break;
         default:
             printf("ERROR: cannot execute statement\n");
             abort();
@@ -248,9 +275,9 @@ void execute_variable_declaration(context_t* context, statement_t* statement) {
     if (statement->op.variable_declaration.value == NULL) {
         variable.content.type = RUNTIME_TYPE_NULL;
     } else {
-        runtime_value_t default_value = evaluate_expr(context, statement->op.variable_declaration.value);
+        runtime_value_t value = evaluate_expr(context, statement->op.variable_declaration.value);
 
-        variable.content = default_value;
+        variable.content = value;
     }
 
     // Increment reference count if value content is reference-counted
@@ -282,9 +309,9 @@ const statement_t* get_function(context_t* context, const char* fn_name, int* st
     stack_frame_t* it;
     int i = cvector_size(context->frames) - 1;
     for (it = cvector_end(context->frames); it-- != cvector_begin(context->frames);) {
-        statement_t search_term = { .type = STATEMENT_FUNCTION_DECL, .op.function_declaration.fn_name = (char*)fn_name };
+        statement_t search_term = {.type = STATEMENT_FUNCTION_DECL, .op.function_declaration.fn_name = (char*) fn_name};
         statement_t* search_term_ptr = &search_term;
-        const statement_t** fn = (const statement_t **) hashmap_get(it->functions, &search_term_ptr);
+        const statement_t** fn = (const statement_t**) hashmap_get(it->functions, &search_term_ptr);
 
         if (fn != NULL) {
             if (stack_index != NULL) *stack_index = i;
@@ -329,6 +356,13 @@ runtime_value_t evaluate_expr(context_t* context, expr_t* expr) {
 
             return value;
         }
+        case EXPR_NULL: {
+            runtime_value_t value = {
+                    .type = RUNTIME_TYPE_NULL,
+            };
+
+            return value;
+        }
         case EXPR_VARIABLE_USE: {
             char* variable_name = expr->op.variable_use.name;
 
@@ -366,6 +400,23 @@ runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type,
     runtime_type_t value_type = lhs_value.type;
 
     if (is_arithmetic_binary_op(op_type)) {
+        if (op_type == BINARY_OP_ADD && value_type == RUNTIME_TYPE_STRING) {
+            // String concat
+            size_t new_size = strlen(lhs_value.value.string.data) + strlen(rhs_value.value.string.data) + 1;
+            char* buffer = xmalloc(new_size);
+            memset(buffer, 0, new_size);
+            strcat(buffer, lhs_value.value.string.data);
+            strcat(buffer, rhs_value.value.string.data);
+
+            runtime_value_t result_value = {
+                    .type = RUNTIME_TYPE_STRING,
+            };
+
+            init_ref_counted(&result_value.value.string, buffer);
+
+            return result_value;
+        }
+
         if (value_type != RUNTIME_TYPE_INTEGER && value_type != RUNTIME_TYPE_FLOAT) {
             printf("ERROR: cannot use arithmetic operator on type %s\n", runtime_type_to_string(value_type));
             exit(EXIT_FAILURE);
@@ -557,20 +608,22 @@ runtime_value_t evaluate_unary_op(context_t* context, unary_op_type_t op_type, e
 }
 
 runtime_value_t evaluate_function_call(context_t* context, const char* fn_name, cvector_vector_type(expr_t*) arguments) {
-    runtime_value_t fake_return_value = {
-        .type = RUNTIME_TYPE_NULL
-    };
+    runtime_value_t return_value = {
+            .type = RUNTIME_TYPE_NULL};
 
     // TODO: proper built-in functions
     if (strcmp(fn_name, "print") == 0) {
-        expr_t **arg;
+        expr_t** arg;
         for (arg = cvector_begin(arguments); arg != cvector_end(arguments); ++arg) {
             runtime_value_t value = evaluate_expr(context, *arg);
+            if (value.type == RUNTIME_TYPE_STRING) {
+                (*value.value.string.reference_count)++;
+            }
             print_value(&value);
             destroy_value(&value);
         }
 
-        return fake_return_value;
+        return return_value;
     }
 
     const statement_t* fn = get_function(context, fn_name, NULL);
@@ -599,9 +652,18 @@ runtime_value_t evaluate_function_call(context_t* context, const char* fn_name, 
     }
 
     execute_statement(context, fn->op.function_declaration.body);
-    pop_stack_frame(context);
 
-    return fake_return_value;
+    if (context->should_return_fn) {
+        context->should_return_fn = false;
+
+        if (context->has_return_value) {
+            return_value = context->return_value;
+            context->has_return_value = false;
+        }
+    }
+
+    pop_stack_frame(context);
+    return return_value;
 }
 
 runtime_type_t string_to_runtime_type(const char* str) {

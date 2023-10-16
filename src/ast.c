@@ -98,6 +98,12 @@ expr_t* make_string_literal(const char* value) {
     return expr;
 }
 
+expr_t* make_null() {
+    expr_t* expr = xmalloc(sizeof(expr_t));
+    expr->type = EXPR_NULL;
+    return expr;
+}
+
 expr_t* make_variable_use(const char* name) {
     expr_t* expr = xmalloc(sizeof(expr_t));
     expr->type = EXPR_VARIABLE_USE;
@@ -145,6 +151,10 @@ void dump_expr(expr_t* expr, int indent) {
         case EXPR_STRING_LITERAL:
             print_indent(indent);
             printf("StringLiteral \"%s\"\n", expr->op.string_literal);
+            break;
+        case EXPR_NULL:
+            print_indent(indent);
+            printf("NullLiteral\n");
             break;
         case EXPR_VARIABLE_USE:
             print_indent(indent);
@@ -264,6 +274,13 @@ statement_t* make_continue_statement() {
     return statement;
 }
 
+statement_t* make_return_statement() {
+    statement_t* statement = xmalloc(sizeof(statement_t));
+    statement->type = STATEMENT_RETURN;
+    statement->op.return_statement.value = NULL;
+    return statement;
+}
+
 void dump_statement(statement_t* statement, int indent) {
     switch (statement->type) {
         case STATEMENT_BLOCK: {
@@ -341,6 +358,13 @@ void dump_statement(statement_t* statement, int indent) {
             print_indent(indent);
             printf("ContinueStatement\n");
             break;
+        case STATEMENT_RETURN:
+            print_indent(indent);
+            printf("ReturnStatement\n");
+            if (statement->op.return_statement.value != NULL) {
+                dump_expr(statement->op.return_statement.value, indent + indent_offset);
+            }
+            break;
     }
 }
 
@@ -378,6 +402,8 @@ void destroy_statement(statement_t* statement) {
             destroy_expr(statement->op.while_loop.condition);
             destroy_statement(statement->op.while_loop.body);
             break;
+        case STATEMENT_RETURN:
+            destroy_expr(statement->op.return_statement.value);
         default:
             break;
     }
