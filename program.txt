@@ -1,7 +1,12 @@
-fn add(a, b) {
-    print(a + b);
+fn prettyprint(val) {
+    print("---");
+    print(val);
+    print("---");
 }
 
-const result = add(4, 5);
+let i = 0;
 
-print(result);
+while (i < 1000) {
+    prettyprint("Salut!");
+    i += 1;
+}
