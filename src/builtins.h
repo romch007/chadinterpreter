@@ -8,6 +8,8 @@ typedef enum {
     BUILTIN_FN_PRINT,
     BUILTIN_FN_TYPE,
     BUILTIN_FN_INPUT,
+    BUILTIN_FN_LEN,
+    BUILTIN_FN_AT,
 } builtin_fn;
 
 builtin_fn is_builtin_fn(const char* fn_name);

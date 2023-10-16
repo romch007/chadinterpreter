@@ -1,12 +1,9 @@
-fn prettyprint(val) {
-    print("---");
-    print(val);
-    print("---");
-}
+const name = input("Ton nom? ");
 
-let i = 0;
-
-while (i < 1000) {
-    prettyprint("Salut!");
-    i += 1;
+if (len(name) > 5) {
+    print("Ton nom est trop long");
+} else if (at(name, 0) == "M") {
+    print("Ton nom ne doit pas commencer par M");
+} else {
+    print("Salut", name, "!");
 }

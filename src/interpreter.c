@@ -61,19 +61,19 @@ void dump_stack_frame(stack_frame_t* frame) {
 void print_value(const runtime_value_t* value) {
     switch (value->type) {
         case RUNTIME_TYPE_STRING:
-            printf("%s\n", value->value.string.data ? (char*) value->value.string.data : "(empty)");
+            printf("%s", value->value.string.data ? (char*) value->value.string.data : "(empty)");
             break;
         case RUNTIME_TYPE_INTEGER:
-            printf("%d\n", value->value.integer);
+            printf("%d", value->value.integer);
             break;
         case RUNTIME_TYPE_FLOAT:
-            printf("%f\n", value->value.floating);
+            printf("%f", value->value.floating);
             break;
         case RUNTIME_TYPE_BOOLEAN:
-            printf("%s\n", value->value.boolean ? "true" : "false");
+            printf("%s", value->value.boolean ? "true" : "false");
             break;
         case RUNTIME_TYPE_NULL:
-            printf("(null)\n");
+            printf("(null)");
             break;
     }
 }
@@ -568,37 +568,44 @@ runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type,
 runtime_value_t evaluate_unary_op(context_t* context, unary_op_type_t op_type, expr_t* arg) {
     runtime_value_t arg_value = evaluate_expr(context, arg);
 
+    runtime_value_t result_value;
+
     if (op_type == UNARY_OP_NOT) {
         if (arg_value.type != RUNTIME_TYPE_BOOLEAN) {
             printf("ERROR: cannot use logical operation on type %s\n", runtime_type_to_string(arg_value.type));
             exit(EXIT_FAILURE);
         }
 
-        arg_value.value.boolean = !arg_value.value.boolean;
+        result_value.type = RUNTIME_TYPE_BOOLEAN;
 
-        return arg_value;
+        result_value.value.boolean = !arg_value.value.boolean;
     } else if (op_type == UNARY_OP_NEG) {
         if (arg_value.type != RUNTIME_TYPE_INTEGER && arg_value.type != RUNTIME_TYPE_FLOAT) {
             printf("ERROR: cannot use logical operation on type %s\n", runtime_type_to_string(arg_value.type));
             exit(EXIT_FAILURE);
         }
 
+        result_value.type = arg_value.type;
+
         switch (arg_value.type) {
             case RUNTIME_TYPE_FLOAT:
-                arg_value.value.floating = -arg_value.value.floating;
+                result_value.value.floating = -arg_value.value.floating;
                 break;
             case RUNTIME_TYPE_INTEGER:
-                arg_value.value.integer = -arg_value.value.integer;
+                result_value.value.integer = -arg_value.value.integer;
                 break;
             default:
                 break;
         }
 
-        return arg_value;
     } else {
         printf("ERROR: unknown unary operator\n");
         abort();
     }
+
+    destroy_value(&arg_value);
+
+    return result_value;
 }
 
 runtime_value_t evaluate_function_call(context_t* context, const char* fn_name, cvector_vector_type(expr_t*) arguments) {
