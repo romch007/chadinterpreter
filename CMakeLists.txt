@@ -40,11 +40,18 @@ add_library(chadinterpreter
         src/unary_ops.h
         src/gc.h
         src/gc.c
+        src/builtins.h
+        src/builtins.c
 )
 
 add_executable(eval src/eval.c)
 
 check_symbol_exists(getopt "unistd.h" HAVE_GETOPT)
+check_symbol_exists(getline "stdio.h" HAVE_GETLINE)
+
+if (HAVE_GETLINE)
+    target_compile_definitions(chadinterpreter PRIVATE HAVE_GETLINE)
+endif ()
 
 if (HAVE_GETOPT)
     target_compile_definitions(eval PRIVATE HAVE_GETOPT)

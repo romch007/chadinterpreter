@@ -1,5 +1,6 @@
 #include "interpreter.h"
 #include "mem.h"
+#include "builtins.h"
 
 static int variable_compare(const void* a, const void* b, void* udata) {
     const runtime_variable_t* va = a;
@@ -78,15 +79,10 @@ void print_value(const runtime_value_t* value) {
 }
 
 void destroy_value(const runtime_value_t* value) {
-    if (value->type == RUNTIME_TYPE_STRING) {
-        // If the variable content is reference-counted, decrement the reference count
-        (*value->value.string.reference_count)--;
-
-        // Destroy the content if no reference are held anymore
-        if (*value->value.string.reference_count <= 0) {
-            free(value->value.string.data);
-            free(value->value.string.reference_count);
-        }
+    // Destroy the content if no reference are held anymore
+    if (value->type == RUNTIME_TYPE_STRING && *value->value.string.reference_count <= 0) {
+        free(value->value.string.data);
+        free(value->value.string.reference_count);
     }
 }
 
@@ -115,6 +111,11 @@ void pop_stack_frame(context_t* context) {
     while (hashmap_iter(frame->variables, &iter, &item)) {
         const runtime_variable_t* variable = item;
         free(variable->name);
+
+        // If the variable content is reference-counted, decrement the reference count
+        if (variable->content.type == RUNTIME_TYPE_STRING)
+            (*variable->content.value.string.reference_count)--;
+
         destroy_value(&variable->content);
     }
     hashmap_free(frame->variables);
@@ -146,9 +147,12 @@ void execute_statement(context_t* context, statement_t* statement) {
         case STATEMENT_FUNCTION_DECL:
             hashmap_set(get_current_stack_frame(context)->functions, &statement);
             break;
-        case STATEMENT_NAKED_FN_CALL:
-            evaluate_expr(context, statement->op.naked_fn_call.function_call);
+        case STATEMENT_NAKED_FN_CALL: {
+            runtime_value_t discarded_return_value = evaluate_expr(context, statement->op.naked_fn_call.function_call);
+
+            destroy_value(&discarded_return_value);
             break;
+        }
         case STATEMENT_VARIABLE_ASSIGN: {
             execute_variable_assignment(context, statement);
             break;
@@ -399,6 +403,8 @@ runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type,
 
     runtime_type_t value_type = lhs_value.type;
 
+    runtime_value_t result_value;
+
     if (is_arithmetic_binary_op(op_type)) {
         if (op_type == BINARY_OP_ADD && value_type == RUNTIME_TYPE_STRING) {
             // String concat
@@ -408,24 +414,12 @@ runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type,
             strcat(buffer, lhs_value.value.string.data);
             strcat(buffer, rhs_value.value.string.data);
 
-            runtime_value_t result_value = {
-                    .type = RUNTIME_TYPE_STRING,
-            };
+            result_value.type = RUNTIME_TYPE_STRING;
 
             init_ref_counted(&result_value.value.string, buffer);
-
-            return result_value;
-        }
-
-        if (value_type != RUNTIME_TYPE_INTEGER && value_type != RUNTIME_TYPE_FLOAT) {
-            printf("ERROR: cannot use arithmetic operator on type %s\n", runtime_type_to_string(value_type));
-            exit(EXIT_FAILURE);
-        }
-
-        if (value_type == RUNTIME_TYPE_INTEGER) {
+        } else if (value_type == RUNTIME_TYPE_INTEGER) {
             // Arithmetic operations with integers
-            runtime_value_t result_value = {
-                    .type = RUNTIME_TYPE_INTEGER};
+            result_value.type = RUNTIME_TYPE_INTEGER;
 
             switch (op_type) {
                 case BINARY_OP_ADD:
@@ -449,16 +443,13 @@ runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type,
                 default:
                     break;
             }
-
-            return result_value;
-        } else {
+        } else if (value_type == RUNTIME_TYPE_FLOAT) {
             if (op_type == BINARY_OP_MODULO) {
                 printf("ERROR: cannot use modulo on float values\n");
                 exit(EXIT_FAILURE);
             }
             // Arithmetic operations with floats
-            runtime_value_t result_value = {
-                    .type = RUNTIME_TYPE_FLOAT};
+            result_value.type = RUNTIME_TYPE_FLOAT;
 
             switch (op_type) {
                 case BINARY_OP_ADD:
@@ -480,8 +471,9 @@ runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type,
                 default:
                     break;
             }
-
-            return result_value;
+        } else {
+            printf("ERROR: cannot use arithmetic operator on type %s\n", runtime_type_to_string(value_type));
+            exit(EXIT_FAILURE);
         }
     } else if (is_logical_binary_op(op_type)) {
         if (value_type != RUNTIME_TYPE_BOOLEAN) {
@@ -489,9 +481,7 @@ runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type,
             exit(EXIT_FAILURE);
         }
 
-        runtime_value_t result_value = {
-                .type = RUNTIME_TYPE_BOOLEAN,
-        };
+        result_value.type = RUNTIME_TYPE_BOOLEAN;
 
         switch (op_type) {
             case BINARY_OP_AND:
@@ -503,18 +493,16 @@ runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type,
             default:
                 break;
         }
-
-        return result_value;
     } else if (is_comparison_binary_op(op_type)) {
-        if (value_type != RUNTIME_TYPE_INTEGER && value_type != RUNTIME_TYPE_FLOAT) {
-            printf("ERROR: cannot use comparison operator on type %s\n", runtime_type_to_string(value_type));
-            exit(EXIT_FAILURE);
-        }
+        result_value.type = RUNTIME_TYPE_BOOLEAN;
 
-        runtime_value_t result_value = {
-                .type = RUNTIME_TYPE_BOOLEAN};
+        if (value_type == RUNTIME_TYPE_STRING) {
+            // String comparison
+            int cmp_result = strcmp(lhs_value.value.string.data, rhs_value.value.string.data);
 
-        if (value_type == RUNTIME_TYPE_INTEGER) {
+            result_value.type = RUNTIME_TYPE_BOOLEAN;
+            result_value.value.integer = cmp_result == 0;
+        } else if (value_type == RUNTIME_TYPE_INTEGER) {
             // Comparison operations with integers
             switch (op_type) {
                 case BINARY_OP_EQUAL:
@@ -538,7 +526,7 @@ runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type,
                 default:
                     break;
             }
-        } else {
+        } else if (value_type == RUNTIME_TYPE_FLOAT) {
             // Comparison operations with floats
             switch (op_type) {
                 case BINARY_OP_EQUAL:
@@ -562,13 +550,19 @@ runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type,
                 default:
                     break;
             }
+        } else {
+            printf("ERROR: cannot use comparison operator on type %s\n", runtime_type_to_string(value_type));
+            exit(EXIT_FAILURE);
         }
-
-        return result_value;
     } else {
         printf("ERROR: unknown binary operator\n");
         abort();
     }
+
+    destroy_value(&lhs_value);
+    destroy_value(&rhs_value);
+
+    return result_value;
 }
 
 runtime_value_t evaluate_unary_op(context_t* context, unary_op_type_t op_type, expr_t* arg) {
@@ -611,19 +605,9 @@ runtime_value_t evaluate_function_call(context_t* context, const char* fn_name, 
     runtime_value_t return_value = {
             .type = RUNTIME_TYPE_NULL};
 
-    // TODO: proper built-in functions
-    if (strcmp(fn_name, "print") == 0) {
-        expr_t** arg;
-        for (arg = cvector_begin(arguments); arg != cvector_end(arguments); ++arg) {
-            runtime_value_t value = evaluate_expr(context, *arg);
-            if (value.type == RUNTIME_TYPE_STRING) {
-                (*value.value.string.reference_count)++;
-            }
-            print_value(&value);
-            destroy_value(&value);
-        }
-
-        return return_value;
+    builtin_fn fn_type;
+    if ((fn_type = is_builtin_fn(fn_name)) != -1) {
+        return execute_builtin(context, fn_type, arguments);
     }
 
     const statement_t* fn = get_function(context, fn_name, NULL);
@@ -632,6 +616,15 @@ runtime_value_t evaluate_function_call(context_t* context, const char* fn_name, 
         printf("ERROR: cannot find function %s\n", fn_name);
         exit(EXIT_FAILURE);
     }
+
+    size_t fn_decl_argument_size = cvector_size(fn->op.function_declaration.arguments);
+    size_t fn_call_argument_size = cvector_size(arguments);
+
+    if (fn_decl_argument_size != fn_call_argument_size) {
+        printf("ERROR: '%s' expects %zu arguments, but %zu were given\n", fn_name, fn_decl_argument_size, fn_call_argument_size);
+        exit(EXIT_FAILURE);
+    }
+
     push_stack_frame(context);
 
     // Inject arguments into stack frame
