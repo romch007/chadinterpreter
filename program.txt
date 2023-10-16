@@ -1,5 +1,7 @@
-let i;
-while (i < 6) {
-    i += 10;
-    break;
+fn add(a, b) {
+    print(a + b);
 }
+
+const result = add(4, 5);
+
+print(result);

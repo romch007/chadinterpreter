@@ -8,6 +8,7 @@
 
 typedef struct {
     struct hashmap* variables;
+    struct hashmap* functions;
 } stack_frame_t;
 
 typedef struct {
@@ -44,7 +45,11 @@ void pop_stack_frame(context_t* context);
 void dump_context(context_t* context);
 void dump_stack_frame(stack_frame_t* frame);
 
+void print_value(const runtime_value_t* value);
+void destroy_value(const runtime_value_t* value);
+
 const runtime_variable_t* get_variable(context_t* context, const char* variable_name, int* stack_index);
+const statement_t* get_function(context_t* context, const char* fn_name, int* stack_index);
 
 void execute_statement(context_t* context, statement_t* statement);
 void execute_variable_declaration(context_t* context, statement_t* statement);
@@ -53,6 +58,7 @@ void execute_variable_assignment(context_t* context, statement_t* statement);
 runtime_value_t evaluate_expr(context_t* context, expr_t* expr);
 runtime_value_t evaluate_binary_op(context_t*, binary_op_type_t op_type, expr_t* lhs, expr_t* rhs);
 runtime_value_t evaluate_unary_op(context_t*, unary_op_type_t op_type, expr_t* arg);
+runtime_value_t evaluate_function_call(context_t* context, const char* fn_name, cvector_vector_type(expr_t*) arguments);
 
 runtime_type_t string_to_runtime_type(const char* str);
 const char* runtime_type_to_string(runtime_type_t type);

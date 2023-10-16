@@ -3,9 +3,9 @@
 #include "lexer.h"
 #include "mem.h"
 #include "parser.h"
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
 
 #ifdef HAVE_GETOPT
 #include <unistd.h>
@@ -179,7 +179,10 @@ int main(int argc, char** argv) {
 
     // Runtime
     context_t* context = create_context();
+
+    push_stack_frame(context);
     execute_statement(context, root);
+    pop_stack_frame(context);
 
     destroy_statement(root);
     destroy_context(context);

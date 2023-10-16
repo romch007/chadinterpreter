@@ -4,6 +4,11 @@
 #include "ast.h"
 #include "mem.h"
 
+static void string_deleter(void* element) {
+    char* str = *(void**) element;
+    free(str);
+}
+
 static void vector_statement_deleter(void* element) {
     statement_t* statement = *(void**) element;
     destroy_statement(statement);
@@ -146,6 +151,16 @@ void dump_expr(expr_t* expr, int indent) {
             printf("Variable %s\n", expr->op.variable_use.name);
             break;
         case EXPR_FUNCTION_CALL:
+            print_indent(indent);
+            printf("FunctionCall\n");
+            print_indent(indent + indent_offset);
+            printf("Identifier %s\n", expr->op.function_call.name);
+            if (expr->op.function_call.arguments != NULL) {
+                expr_t** arg;
+                for (arg = cvector_begin(expr->op.function_call.arguments); arg != cvector_end(expr->op.function_call.arguments); ++arg) {
+                    dump_expr(*arg, indent + indent_offset);
+                }
+            }
             break;
     }
 }
@@ -202,6 +217,15 @@ statement_t* make_variable_declaration(bool constant, const char* variable_name)
     statement->op.variable_declaration.is_constant = constant;
     statement->op.variable_declaration.variable_name = copy_alloc(variable_name);
     statement->op.variable_declaration.value = NULL;
+    return statement;
+}
+
+statement_t* make_function_declaration(const char* fn_name) {
+    statement_t* statement = xmalloc(sizeof(statement_t));
+    statement->type = STATEMENT_FUNCTION_DECL;
+    statement->op.function_declaration.fn_name = copy_alloc(fn_name);
+    statement->op.function_declaration.arguments = NULL;
+    statement->op.function_declaration.body = NULL;
     return statement;
 }
 
@@ -273,6 +297,24 @@ void dump_statement(statement_t* statement, int indent) {
             printf("Identifier %s\n", statement->op.variable_declaration.variable_name);
             dump_expr(statement->op.variable_declaration.value, indent + indent_offset);
             break;
+        case STATEMENT_FUNCTION_DECL:
+            print_indent(indent);
+            printf("FunctionDeclaration\n");
+            print_indent(indent + indent_offset);
+            printf("Identifier %s\n", statement->op.function_declaration.fn_name);
+
+            if (statement->op.function_declaration.arguments != NULL) {
+                print_indent(indent + indent_offset);
+                printf("Arguments ");
+                char** arg_name;
+                for (arg_name = cvector_begin(statement->op.function_declaration.arguments); arg_name != cvector_end(statement->op.function_declaration.arguments); ++arg_name) {
+                    printf("%s ", *arg_name);
+                }
+                printf("\n");
+            }
+
+            dump_statement(statement->op.function_declaration.body, indent + indent_offset);
+            break;
         case STATEMENT_VARIABLE_ASSIGN:
             print_indent(indent);
             printf("VariableAssignment\n");
@@ -281,6 +323,9 @@ void dump_statement(statement_t* statement, int indent) {
             dump_expr(statement->op.variable_assignment.value, indent + indent_offset);
             break;
         case STATEMENT_NAKED_FN_CALL:
+            print_indent(indent);
+            printf("NakedFunctionCall\n");
+            dump_expr(statement->op.naked_fn_call.function_call, indent + indent_offset);
             break;
         case STATEMENT_WHILE_LOOP:
             print_indent(indent);
@@ -310,6 +355,12 @@ void destroy_statement(statement_t* statement) {
         case STATEMENT_VARIABLE_DECL:
             free(statement->op.variable_declaration.variable_name);
             destroy_expr(statement->op.variable_declaration.value);
+            break;
+        case STATEMENT_FUNCTION_DECL:
+            free(statement->op.function_declaration.fn_name);
+            destroy_statement(statement->op.function_declaration.body);
+            cvector_set_elem_destructor(statement->op.function_declaration.arguments, string_deleter);
+            cvector_free(statement->op.function_declaration.arguments);
             break;
         case STATEMENT_IF_CONDITION:
             destroy_expr(statement->op.if_condition.condition);

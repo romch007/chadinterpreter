@@ -47,6 +47,9 @@ statement_t* parse_block(parser_t* parser) {
                     statement = parse_variable_assignment(parser);
                 }
                 break;
+            case TOKEN_FN:
+                statement = parse_function_declaration(parser);
+                break;
             case TOKEN_IF:
                 statement = parse_if_condition(parser);
                 break;
@@ -116,7 +119,7 @@ statement_t* parse_variable_declaration(parser_t* parser) {
 
     statement_t* variable_declaration = make_variable_declaration(constant, variable_name);
 
-    if (peek(parser, 1)->type == TOKEN_EQUAL) {
+    if (peek(parser, 0)->type == TOKEN_EQUAL) {
         consume(parser, 1);
         variable_declaration->op.variable_declaration.value = parse_expression(parser);
     }
@@ -124,6 +127,36 @@ statement_t* parse_variable_declaration(parser_t* parser) {
     expect(parser, advance(parser), TOKEN_SEMICOLON);
 
     return variable_declaration;
+}
+
+statement_t* parse_function_declaration(parser_t* parser) {
+    expect(parser, advance(parser), TOKEN_FN);
+    token_t* ident_fn_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
+
+    statement_t* fn_decl = make_function_declaration(ident_fn_name->value.str);
+
+    expect(parser, advance(parser), TOKEN_OPEN_PAREN);
+
+    if (peek(parser, 0)->type == TOKEN_IDENTIFIER) {
+        for (;;) {
+            token_t* ident_arg_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
+            cvector_push_back(fn_decl->op.function_declaration.arguments, copy_alloc(ident_arg_name->value.str));
+
+            if (peek(parser, 0)->type == TOKEN_COMMA) {
+                consume(parser, 1);
+            } else {
+                break;
+            }
+        }
+    }
+
+    expect(parser, advance(parser), TOKEN_CLOSE_PAREN);
+
+    expect(parser, advance(parser), TOKEN_OPEN_BRACE);
+    fn_decl->op.function_declaration.body = parse_block(parser);
+    expect(parser, advance(parser), TOKEN_CLOSE_BRACE);
+
+    return fn_decl;
 }
 
 statement_t* parse_variable_assignment(parser_t* parser) {

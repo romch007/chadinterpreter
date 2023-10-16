@@ -16,7 +16,7 @@ typedef enum {
 } expr_type_t;
 
 typedef enum {
-#define CHAD_INTERPRETER_BINARY_OP(X, Y) BINARY_OP_ ## X,
+#define CHAD_INTERPRETER_BINARY_OP(X, Y) BINARY_OP_##X,
 #include "binary_ops.h"
 } binary_op_type_t;
 
@@ -35,7 +35,7 @@ inline bool is_comparison_binary_op(binary_op_type_t type) {
 const char* binary_op_to_symbol(binary_op_type_t op_type);
 
 typedef enum {
-#define CHAD_INTERPRETER_UNARY_OP(X, Y) UNARY_OP_ ## X,
+#define CHAD_INTERPRETER_UNARY_OP(X, Y) UNARY_OP_##X,
 #include "unary_ops.h"
 } unary_op_type_t;
 
@@ -84,6 +84,7 @@ typedef enum {
     STATEMENT_BLOCK,
     STATEMENT_IF_CONDITION,
     STATEMENT_VARIABLE_DECL,
+    STATEMENT_FUNCTION_DECL,
     STATEMENT_VARIABLE_ASSIGN,
     STATEMENT_NAKED_FN_CALL,
     STATEMENT_WHILE_LOOP,
@@ -108,6 +109,11 @@ typedef struct statement {
             expr_t* value;
         } variable_declaration;
         struct {
+            char* fn_name;
+            cvector_vector_type(char*) arguments;
+            struct statement* body;
+        } function_declaration;
+        struct {
             char* variable_name;
             expr_t* value;
         } variable_assignment;
@@ -124,6 +130,7 @@ typedef struct statement {
 statement_t* make_block_statement();
 statement_t* make_if_condition_statement(expr_t* condition, statement_t* body);
 statement_t* make_variable_declaration(bool constant, const char* variable_name);
+statement_t* make_function_declaration(const char* fn_name);
 statement_t* make_variable_assignment(const char* variable_name, expr_t* value);
 statement_t* make_naked_fn_call(expr_t* function_call);
 statement_t* make_while_loop(expr_t* condition, statement_t* body);
