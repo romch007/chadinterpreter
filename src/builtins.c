@@ -4,7 +4,7 @@
 #ifdef HAVE_GETLINE
 #include <stdio.h>
 #else
-#error TODO: implements getline
+#include "getline_impl.h"
 #endif
 
 builtin_fn_t is_builtin_fn(const char* fn_name) {
