@@ -135,6 +135,7 @@ void print_usage() {
 int main(int argc, char** argv) {
     if (argc < 2) {
         printf("ERROR: no file specified\n");
+        print_usage();
         return 1;
     }
 

@@ -41,9 +41,9 @@ add_library(chadinterpreter
         src/builtins.c
 )
 
-add_executable(eval src/eval.c)
+add_executable(chadeval src/eval.c)
 
-target_compile_definitions(eval PRIVATE APP_VERSION="${PROJECT_VERSION}" APP_NAME="${PROJECT_NAME}")
+target_compile_definitions(chadeval PRIVATE APP_VERSION="${PROJECT_VERSION}" APP_NAME="${PROJECT_NAME}")
 
 check_symbol_exists(getopt "unistd.h" HAVE_GETOPT)
 check_symbol_exists(getline "stdio.h" HAVE_GETLINE)
@@ -53,12 +53,12 @@ if (HAVE_GETLINE)
 endif ()
 
 if (HAVE_GETOPT)
-    target_compile_definitions(eval PRIVATE HAVE_GETOPT)
+    target_compile_definitions(chadeval PRIVATE HAVE_GETOPT)
 endif ()
 
-target_link_libraries(eval PRIVATE chadinterpreter)
+target_link_libraries(chadeval PRIVATE chadinterpreter)
 
 if (UNIX)
     target_compile_options(chadinterpreter PRIVATE "-Wall")
-    target_compile_options(eval PRIVATE "-Wall")
+    target_compile_options(chadeval PRIVATE "-Wall")
 endif ()

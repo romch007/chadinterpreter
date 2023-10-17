@@ -10,10 +10,10 @@ cmake --build build --parallel
 ## Features
 
 - [x] Variables
-- [x] Types (`str`, `bool`, `int`, `float`)
+- [x] Types (`str`, `bool`, `int`, `float`, `null`)
 - [x] Flow control (`if`, `else if`, `else`, `while`)
 - [x] Reference counted strings
-- [ ] Functions
+- [x] Functions
 
 ## How to use the language
 
@@ -23,7 +23,7 @@ Variable declarations:
 const title = "Hello World!";
 let i = 0;
 let truth = false;
-let name: str;
+let null_for_the_moment;
 ```
 
 Flow control:
@@ -41,4 +41,12 @@ if (i < 7) {
 while (i < 100) {
     i += 1;
 }
+```
+
+Functions:
+
+```
+fn add(a, b) {
+    return a + b;
+} 
 ```
