@@ -5,10 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef USE_JEMALLOC
-#include <jemalloc/jemalloc.h>
-#endif
-
 inline void* xmalloc(const size_t size) {
     void* ptr = malloc(size);
     if (ptr == NULL) {
