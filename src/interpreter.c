@@ -612,7 +612,7 @@ runtime_value_t evaluate_function_call(context_t* context, const char* fn_name, 
     runtime_value_t return_value = {
             .type = RUNTIME_TYPE_NULL};
 
-    builtin_fn fn_type;
+    builtin_fn_t fn_type;
     if ((fn_type = is_builtin_fn(fn_name)) != -1) {
         return execute_builtin(context, fn_type, arguments);
     }

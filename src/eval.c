@@ -125,6 +125,13 @@ static char* read_file_content(char* filename) {
     return string;
 }
 
+void print_usage() {
+    printf("Usage: eval [file]\n");
+    printf("  -h: print help\n");
+    printf("  -v: print version\n");
+    printf("  -a: dump AST\n");
+}
+
 int main(int argc, char** argv) {
     if (argc < 2) {
         printf("ERROR: no file specified\n");
@@ -135,18 +142,20 @@ int main(int argc, char** argv) {
 
     int opt;
 
-    while ((opt = getopt(argc, argv, ":ah")) != -1) {
+    while ((opt = getopt(argc, argv, ":hva")) != -1) {
         switch (opt) {
             case 'a':
                 should_print_ast = true;
                 break;
             case 'h':
-                printf("Usage: eval [file]\n");
-                printf("  -h: print help\n");
-                printf("  -a: dump AST\n");
+                print_usage();
+                return 0;
+            case 'v':
+                printf("%s %s\n", APP_NAME, APP_VERSION);
                 return 0;
             case '?':
-                printf("ERROR: unknown option %c\n", optopt);
+                printf("ERROR: unknown option '%c'\n", optopt);
+                print_usage();
                 return 1;
             default:
                 break;

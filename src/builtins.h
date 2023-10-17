@@ -10,9 +10,9 @@ typedef enum {
     BUILTIN_FN_INPUT,
     BUILTIN_FN_LEN,
     BUILTIN_FN_AT,
-} builtin_fn;
+} builtin_fn_t;
 
-builtin_fn is_builtin_fn(const char* fn_name);
-runtime_value_t execute_builtin(context_t* context, builtin_fn fn_type, cvector_vector_type(expr_t*) arguments);
+builtin_fn_t is_builtin_fn(const char* fn_name);
+runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvector_vector_type(expr_t*) arguments);
 
 #endif

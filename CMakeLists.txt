@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(chadinterpreter LANGUAGES C)
+project(chadinterpreter VERSION 1.0.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED TRUE)
@@ -45,6 +45,8 @@ add_library(chadinterpreter
 )
 
 add_executable(eval src/eval.c)
+
+target_compile_definitions(eval PRIVATE APP_VERSION="${PROJECT_VERSION}" APP_NAME="${PROJECT_NAME}")
 
 check_symbol_exists(getopt "unistd.h" HAVE_GETOPT)
 check_symbol_exists(getline "stdio.h" HAVE_GETLINE)

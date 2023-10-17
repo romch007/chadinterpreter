@@ -7,7 +7,7 @@
 #error TODO: implements getline
 #endif
 
-builtin_fn is_builtin_fn(const char* fn_name) {
+builtin_fn_t is_builtin_fn(const char* fn_name) {
     if (strcmp(fn_name, "print") == 0) {
         return BUILTIN_FN_PRINT;
     } else if (strcmp(fn_name, "type") == 0) {
@@ -23,7 +23,7 @@ builtin_fn is_builtin_fn(const char* fn_name) {
     return -1;
 }
 
-runtime_value_t execute_builtin(context_t* context, builtin_fn fn_type, cvector_vector_type(expr_t*) arguments) {
+runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvector_vector_type(expr_t*) arguments) {
     switch (fn_type) {
         case BUILTIN_FN_PRINT: {
             expr_t** arg;
