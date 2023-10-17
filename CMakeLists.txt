@@ -5,6 +5,8 @@ project(chadinterpreter VERSION 1.0.0 LANGUAGES C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED TRUE)
 
+include(GNUInstallDirs)
+
 set(default_build_type "Debug")
 
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -64,3 +66,5 @@ if (UNIX)
     target_compile_options(chadinterpreter PRIVATE "-Wall")
     target_compile_options(chadeval PRIVATE "-Wall")
 endif ()
+
+install(TARGETS chadinterpreter chadeval)
