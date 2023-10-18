@@ -6,6 +6,8 @@
 #include "hashmap.h"
 #include <stdbool.h>
 
+static const int MAX_RECURSION_DEPTH = 1000;
+
 typedef enum {
 #define CHAD_INTERPRETER_RUNTIME_TYPE(A, B) RUNTIME_TYPE_##A,
 #include "runtime_types.h"
@@ -39,6 +41,7 @@ typedef struct {
     bool should_return_fn;
     bool has_return_value;
     runtime_value_t return_value;
+    int recursion_depth;
 } context_t;
 
 context_t* create_context();

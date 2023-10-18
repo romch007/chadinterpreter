@@ -1,6 +1,6 @@
 #include "interpreter.h"
-#include "mem.h"
 #include "builtins.h"
+#include "mem.h"
 
 static int variable_compare(const void* a, const void* b, void* udata) {
     const runtime_variable_t* va = a;
@@ -32,6 +32,7 @@ context_t* create_context() {
     context->should_break_loop = false;
     context->should_continue_loop = false;
     context->should_return_fn = false;
+    context->recursion_depth = 0;
     return context;
 }
 
@@ -208,13 +209,13 @@ void execute_statement(context_t* context, statement_t* statement) {
             context->should_continue_loop = true;
             break;
         case STATEMENT_RETURN:
-            context->should_return_fn = true;
             if (statement->op.return_statement.value != NULL) {
                 runtime_value_t return_value = evaluate_expr(context, statement->op.return_statement.value);
 
                 context->has_return_value = true;
                 context->return_value = return_value;
             }
+            context->should_return_fn = true;
             break;
         default:
             printf("ERROR: cannot execute statement\n");
@@ -634,24 +635,40 @@ runtime_value_t evaluate_function_call(context_t* context, const char* fn_name, 
 
     push_stack_frame(context);
 
-    // Inject arguments into stack frame
+    // Evaluate arguments
+    cvector_vector_type(runtime_value_t) evaluated_arguments = NULL;
+    cvector_init(evaluated_arguments, cvector_size(arguments), NULL);
     expr_t** arg_value;
-    int arg_index = 0;
     for (arg_value = cvector_begin(arguments); arg_value != cvector_end(arguments); ++arg_value) {
         runtime_value_t value = evaluate_expr(context, *arg_value);
+        cvector_push_back(evaluated_arguments, value);
+    }
+
+    // Inject arguments values into stack frame
+    for (size_t i = 0; i < cvector_size(evaluated_arguments); i++) {
+        runtime_value_t value = evaluated_arguments[i];
         if (value.type == RUNTIME_TYPE_STRING) {
             (*value.value.string.reference_count)++;
         }
         runtime_variable_t variable = {
-                .name = copy_alloc(fn->op.function_declaration.arguments[arg_index]),
+                .name = copy_alloc(fn->op.function_declaration.arguments[i]),
                 .is_constant = false,
                 .content = value,
         };
         hashmap_set(get_current_stack_frame(context)->variables, &variable);
-        arg_index++;
+    }
+
+    cvector_free(evaluated_arguments);
+
+    context->recursion_depth++;
+
+    if (context->recursion_depth >= MAX_RECURSION_DEPTH) {
+        printf("ERROR: max recursion depth exceeded\n");
+        exit(EXIT_FAILURE);
     }
 
     execute_statement(context, fn->op.function_declaration.body);
+    context->recursion_depth--;
 
     if (context->should_return_fn) {
         context->should_return_fn = false;
