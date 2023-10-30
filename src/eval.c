@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "errors.h"
 
 #ifdef HAVE_GETOPT
 #include <unistd.h>
@@ -18,8 +19,7 @@ static char* read_file_content(char* filename) {
     FILE* file = fopen(filename, "rb");
 
     if (file == NULL) {
-        printf("ERROR: cannot open file: %s\n", strerror(errno));
-        exit(EXIT_FAILURE);
+        panic("ERROR: cannot open file: %s\n", strerror(errno));
     }
 
     fseek(file, 0, SEEK_END);
@@ -44,7 +44,7 @@ void print_usage() {
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-        printf("ERROR: no file specified\n");
+        fprintf(stderr, "ERROR: no file specified\n");
         print_usage();
         return 1;
     }
@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
                 printf("%s %s\n", APP_NAME, APP_VERSION);
                 return 0;
             case '?':
-                printf("ERROR: unknown option '%c'\n", optopt);
+                fprintf(stderr, "ERROR: unknown option '%c'\n", optopt);
                 print_usage();
                 return 1;
             default:

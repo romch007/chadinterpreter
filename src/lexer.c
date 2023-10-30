@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <string.h>
+#include "errors.h"
 
 static size_t current_pos = 0;
 static const char* s_input = NULL;
@@ -235,8 +236,7 @@ cvector_vector_type(token_t) tokenize(const char* input) {
             token.value.str = extract_substr(input, start, len);
             current_pos++;
         } else {
-            printf("ERROR: invalid character %c, line %d", c, current_line);
-            exit(EXIT_FAILURE);
+            panic("ERROR: invalid character %c, line %d", c, current_line);
         }
 
         token.line_nb = current_line;

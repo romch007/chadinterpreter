@@ -1,6 +1,7 @@
 #include "interpreter.h"
 #include "builtins.h"
 #include "mem.h"
+#include "errors.h"
 
 static int variable_compare(const void* a, const void* b, void* udata) {
     const runtime_variable_t* va = a;
@@ -162,8 +163,7 @@ void execute_statement(context_t* context, statement_t* statement) {
             runtime_value_t condition = evaluate_expr(context, statement->op.if_condition.condition);
 
             if (condition.type != RUNTIME_TYPE_BOOLEAN) {
-                printf("ERROR: found a value of type %s in a if condition\n", runtime_type_to_string(condition.type));
-                exit(EXIT_FAILURE);
+                panic("ERROR: found a value of type %s in a if condition\n", runtime_type_to_string(condition.type));
             }
 
             statement_t* body = statement->op.if_condition.body;
@@ -182,8 +182,7 @@ void execute_statement(context_t* context, statement_t* statement) {
             runtime_value_t condition = evaluate_expr(context, statement->op.while_loop.condition);
 
             if (condition.type != RUNTIME_TYPE_BOOLEAN) {
-                printf("ERROR: found a value of type %s in a while condition\n", runtime_type_to_string(condition.type));
-                exit(EXIT_FAILURE);
+                panic("ERROR: found a value of type %s in a while condition\n", runtime_type_to_string(condition.type));
             }
 
             push_stack_frame(context);
@@ -218,7 +217,7 @@ void execute_statement(context_t* context, statement_t* statement) {
             context->should_return_fn = true;
             break;
         default:
-            printf("ERROR: cannot execute statement\n");
+            fprintf(stderr, "ERROR: cannot execute statement\n");
             abort();
     }
 }
@@ -231,20 +230,17 @@ void execute_variable_assignment(context_t* context, statement_t* statement) {
     const runtime_variable_t* old_variable = get_variable(context, variable_name, &stack_index);
 
     if (old_variable == NULL) {
-        printf("ERROR: cannot find variable '%s'\n", variable_name);
-        exit(EXIT_FAILURE);
+        panic("ERROR: cannot find variable '%s'\n", variable_name);
     }
 
     if (old_variable->is_constant) {
-        printf("ERROR: variable '%s' is constant\n", variable_name);
-        exit(EXIT_FAILURE);
+        panic("ERROR: variable '%s' is constant\n", variable_name);
     }
 
     runtime_value_t new_content = evaluate_expr(context, statement->op.variable_assignment.value);
 
     if (old_variable->content.type != new_content.type) {
-        printf("ERROR: cannot assign value of type %s to variable '%s' of type %s\n", runtime_type_to_string(new_content.type), variable_name, runtime_type_to_string(old_variable->content.type));
-        exit(EXIT_FAILURE);
+        panic("ERROR: cannot assign value of type %s to variable '%s' of type %s\n", runtime_type_to_string(new_content.type), variable_name, runtime_type_to_string(old_variable->content.type));
     }
 
     // Increment reference count if value content is reference-counted
@@ -268,8 +264,7 @@ void execute_variable_declaration(context_t* context, statement_t* statement) {
     const runtime_variable_t* old_variable = get_variable(context, variable_name, NULL);
 
     if (old_variable != NULL && old_variable->is_constant == true) {
-        printf("ERROR: declaration of '%s' is shadowing a constant variable\n", variable_name);
-        exit(EXIT_FAILURE);
+        panic("ERROR: declaration of '%s' is shadowing a constant variable\n", variable_name);
     }
 
     runtime_variable_t variable = {
@@ -374,8 +369,7 @@ runtime_value_t evaluate_expr(context_t* context, expr_t* expr) {
             const runtime_variable_t* variable = get_variable(context, variable_name, NULL);
 
             if (variable == NULL) {
-                printf("ERROR: cannot find variable '%s'\n", variable_name);
-                exit(EXIT_FAILURE);
+                panic("ERROR: cannot find variable '%s'\n", variable_name);
             }
 
             return variable->content;
@@ -388,7 +382,7 @@ runtime_value_t evaluate_expr(context_t* context, expr_t* expr) {
         case EXPR_UNARY_OPT:
             return evaluate_unary_op(context, expr->op.unary.type, expr->op.unary.arg);
         default:
-            printf("ERROR: cannot evaluate expression\n");
+            fprintf(stderr, "ERROR: cannot evaluate expression\n");
             abort();
     }
 }
@@ -398,8 +392,7 @@ runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type,
     runtime_value_t rhs_value = evaluate_expr(context, rhs);
 
     if (lhs_value.type != rhs_value.type) {
-        printf("ERROR: type mismatch between %s and %s\n", runtime_type_to_string(lhs_value.type), runtime_type_to_string(rhs_value.type));
-        exit(EXIT_FAILURE);
+        panic("ERROR: type mismatch between %s and %s\n", runtime_type_to_string(lhs_value.type), runtime_type_to_string(rhs_value.type));
     }
 
     runtime_type_t value_type = lhs_value.type;
@@ -434,8 +427,7 @@ runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type,
                     break;
                 case BINARY_OP_DIV:
                     if (rhs_value.value.integer == 0) {
-                        printf("ERROR: cannot divide by zero\n");
-                        exit(EXIT_FAILURE);
+                        panic("ERROR: cannot divide by zero\n");
                     }
                     result_value.value.integer = lhs_value.value.integer / rhs_value.value.integer;
                     break;
@@ -446,8 +438,7 @@ runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type,
             }
         } else if (value_type == RUNTIME_TYPE_FLOAT) {
             if (op_type == BINARY_OP_MODULO) {
-                printf("ERROR: cannot use modulo on float values\n");
-                exit(EXIT_FAILURE);
+                panic("ERROR: cannot use modulo on float values\n");
             }
             // Arithmetic operations with floats
             result_value.type = RUNTIME_TYPE_FLOAT;
@@ -464,8 +455,7 @@ runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type,
                     break;
                 case BINARY_OP_DIV:
                     if (rhs_value.value.floating == 0) {
-                        printf("ERROR: cannot divide by zero\n");
-                        exit(EXIT_FAILURE);
+                        panic("ERROR: cannot divide by zero\n");
                     }
                     result_value.value.floating = lhs_value.value.floating / rhs_value.value.floating;
                     break;
@@ -473,13 +463,11 @@ runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type,
                     break;
             }
         } else {
-            printf("ERROR: cannot use arithmetic operator on type %s\n", runtime_type_to_string(value_type));
-            exit(EXIT_FAILURE);
+            panic("ERROR: cannot use arithmetic operator on type %s\n", runtime_type_to_string(value_type));
         }
     } else if (is_logical_binary_op(op_type)) {
         if (value_type != RUNTIME_TYPE_BOOLEAN) {
-            printf("ERROR: cannot use logical operator on type %s\n", runtime_type_to_string(value_type));
-            exit(EXIT_FAILURE);
+            panic("ERROR: cannot use logical operator on type %s\n", runtime_type_to_string(value_type));
         }
 
         result_value.type = RUNTIME_TYPE_BOOLEAN;
@@ -552,11 +540,10 @@ runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type,
                     break;
             }
         } else {
-            printf("ERROR: cannot use comparison operator on type %s\n", runtime_type_to_string(value_type));
-            exit(EXIT_FAILURE);
+            panic("ERROR: cannot use comparison operator on type %s\n", runtime_type_to_string(value_type));
         }
     } else {
-        printf("ERROR: unknown binary operator\n");
+        fprintf(stderr, "ERROR: unknown binary operator\n");
         abort();
     }
 
@@ -573,8 +560,7 @@ runtime_value_t evaluate_unary_op(context_t* context, unary_op_type_t op_type, e
 
     if (op_type == UNARY_OP_NOT) {
         if (arg_value.type != RUNTIME_TYPE_BOOLEAN) {
-            printf("ERROR: cannot use logical operation on type %s\n", runtime_type_to_string(arg_value.type));
-            exit(EXIT_FAILURE);
+            panic("ERROR: cannot use logical operation on type %s\n", runtime_type_to_string(arg_value.type));
         }
 
         result_value.type = RUNTIME_TYPE_BOOLEAN;
@@ -582,8 +568,7 @@ runtime_value_t evaluate_unary_op(context_t* context, unary_op_type_t op_type, e
         result_value.value.boolean = !arg_value.value.boolean;
     } else if (op_type == UNARY_OP_NEG) {
         if (arg_value.type != RUNTIME_TYPE_INTEGER && arg_value.type != RUNTIME_TYPE_FLOAT) {
-            printf("ERROR: cannot use logical operation on type %s\n", runtime_type_to_string(arg_value.type));
-            exit(EXIT_FAILURE);
+            panic("ERROR: cannot use logical operation on type %s\n", runtime_type_to_string(arg_value.type));
         }
 
         result_value.type = arg_value.type;
@@ -600,7 +585,7 @@ runtime_value_t evaluate_unary_op(context_t* context, unary_op_type_t op_type, e
         }
 
     } else {
-        printf("ERROR: unknown unary operator\n");
+        fprintf(stderr, "ERROR: unknown unary operator\n");
         abort();
     }
 
@@ -621,16 +606,14 @@ runtime_value_t evaluate_function_call(context_t* context, const char* fn_name, 
     const statement_t* fn = get_function(context, fn_name, NULL);
 
     if (fn == NULL) {
-        printf("ERROR: cannot find function %s\n", fn_name);
-        exit(EXIT_FAILURE);
+        panic("ERROR: cannot find function %s\n", fn_name);
     }
 
     size_t fn_decl_argument_size = cvector_size(fn->op.function_declaration.arguments);
     size_t fn_call_argument_size = cvector_size(arguments);
 
     if (fn_decl_argument_size != fn_call_argument_size) {
-        printf("ERROR: '%s' expects %zu arguments, but %zu were given\n", fn_name, fn_decl_argument_size, fn_call_argument_size);
-        exit(EXIT_FAILURE);
+        panic("ERROR: '%s' expects %zu arguments, but %zu were given\n", fn_name, fn_decl_argument_size, fn_call_argument_size);
     }
 
     push_stack_frame(context);
@@ -663,8 +646,7 @@ runtime_value_t evaluate_function_call(context_t* context, const char* fn_name, 
     context->recursion_depth++;
 
     if (context->recursion_depth >= MAX_RECURSION_DEPTH) {
-        printf("ERROR: max recursion depth exceeded\n");
-        exit(EXIT_FAILURE);
+        panic("ERROR: max recursion depth exceeded\n");
     }
 
     execute_statement(context, fn->op.function_declaration.body);

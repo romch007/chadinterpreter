@@ -1,5 +1,6 @@
 #include "parser.h"
 #include <stdio.h>
+#include "errors.h"
 
 static void consume(parser_t* parser, size_t count) {
     parser->token_index += count;
@@ -19,8 +20,7 @@ static token_t* expect(parser_t* parser, token_t* token, token_type_t type) {
     if (token == NULL)
         token = peek(parser, 0);
     if (token->type != type) {
-        printf("ERROR: invalid token type line %d, expected %s but got %s\n", token->line_nb, token_type_to_string(type), token_type_to_string(token->type));
-        exit(EXIT_FAILURE);
+        panic("ERROR: invalid token type line %d, expected %s but got %s\n", token->line_nb, token_type_to_string(type), token_type_to_string(token->type));
     }
     return token;
 }
@@ -75,8 +75,7 @@ statement_t* parse_block(parser_t* parser) {
                 expect(parser, advance(parser), TOKEN_CLOSE_BRACE);
                 break;
             default:
-                printf("ERROR: invalid first token %s", token_type_to_string(token->type));
-                exit(EXIT_FAILURE);
+                panic("ERROR: invalid first token %s", token_type_to_string(token->type));
         }
 
         cvector_push_back(root->op.block.statements, statement);
@@ -355,8 +354,7 @@ expr_t* parse_factor(parser_t* parser) {
             expr = make_unary_op(UNARY_OP_NOT, parse_term(parser));
             break;
         default:
-            printf("ERROR: unexpected token %s", token_type_to_string(token->type));
-            exit(EXIT_FAILURE);
+            panic("ERROR: unexpected token %s", token_type_to_string(token->type));
     }
 
     return expr;

@@ -43,6 +43,7 @@ add_library(chadinterpreter
         src/builtins.c
         src/getopt_impl.h
         src/getline_impl.h
+        src/errors.h
 )
 
 add_executable(chadeval src/eval.c)

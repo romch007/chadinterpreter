@@ -1,4 +1,5 @@
 #include "builtins.h"
+#include "errors.h"
 #include <errno.h>
 
 #ifdef HAVE_GETLINE
@@ -42,8 +43,7 @@ runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvecto
         }
         case BUILTIN_FN_TYPE: {
             if (cvector_size(arguments) != 1) {
-                printf("ERROR: 'type' function requires one argument\n");
-                exit(EXIT_FAILURE);
+                panic("ERROR: 'type' function requires one argument\n");
             }
 
             expr_t* arg = arguments[0];
@@ -64,8 +64,7 @@ runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvecto
             bool has_ps1 = false;
 
             if (cvector_size(arguments) > 1) {
-                printf("ERROR: 'input' function requires zero or one argument(s)\n");
-                exit(EXIT_FAILURE);
+                panic("ERROR: 'input' function requires zero or one argument(s)\n");
             }
 
             if (cvector_size(arguments) == 1) {
@@ -73,8 +72,7 @@ runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvecto
                 ps1_value = evaluate_expr(context, arguments[0]);
 
                 if (ps1_value.type != RUNTIME_TYPE_STRING) {
-                    printf("ERROR: 'input' can only accept str, not %s\n", runtime_type_to_string(ps1_value.type));
-                    exit(EXIT_FAILURE);
+                    panic("ERROR: 'input' can only accept str, not %s\n", runtime_type_to_string(ps1_value.type));
                 }
             }
 
@@ -87,8 +85,7 @@ runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvecto
             ssize_t read = getline(&buffer, &len, stdin);
 
             if (read < 0) {
-                printf("ERROR: cannot get line: %s\n", strerror(errno));
-                exit(EXIT_FAILURE);
+                panic("ERROR: cannot get line: %s\n", strerror(errno));
             }
 
             // Remove newline
@@ -107,15 +104,13 @@ runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvecto
         }
         case BUILTIN_FN_LEN: {
             if (cvector_size(arguments) != 1) {
-                printf("ERROR: 'len' function requires one argument\n");
-                exit(EXIT_FAILURE);
+                panic("ERROR: 'len' function requires one argument\n");
             }
 
             runtime_value_t input_value = evaluate_expr(context, arguments[0]);
 
             if (input_value.type != RUNTIME_TYPE_STRING) {
-                printf("ERROR: cannot use 'len' on type %s\n", runtime_type_to_string(input_value.type));
-                exit(EXIT_FAILURE);
+                panic("ERROR: cannot use 'len' on type %s\n", runtime_type_to_string(input_value.type));
             }
 
             int len = (int)strlen(input_value.value.string.data);
@@ -131,33 +126,29 @@ runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvecto
         }
         case BUILTIN_FN_AT: {
             if (cvector_size(arguments) != 2) {
-                printf("ERROR: 'len' function requires two argument\n");
-                exit(EXIT_FAILURE);
+                panic("ERROR: 'len' function requires two argument\n");
             }
 
             runtime_value_t target_value = evaluate_expr(context, arguments[0]);
 
             if (target_value.type != RUNTIME_TYPE_STRING) {
-                printf("ERROR: cannot use 'at' on type %s\n", runtime_type_to_string(target_value.type));
-                exit(EXIT_FAILURE);
+                panic("ERROR: cannot use 'at' on type %s\n", runtime_type_to_string(target_value.type));
             }
 
             runtime_value_t index_value = evaluate_expr(context, arguments[1]);
 
             if (index_value.type != RUNTIME_TYPE_INTEGER) {
-                printf("ERROR: type %s cannot be use as an index\n", runtime_type_to_string(target_value.type));
-                exit(EXIT_FAILURE);
+                panic("ERROR: type %s cannot be use as an index\n", runtime_type_to_string(target_value.type));
             }
 
             int index = index_value.value.integer;
             char* origin = target_value.value.string.data;
 
             if (strlen(origin) <= index || index < 0) {
-                printf("ERROR: index %d is out of bound\n", index);
-                exit(EXIT_FAILURE);
+                panic("ERROR: index %d is out of bound\n", index);
             }
 
-            char* chr = malloc(2);
+            char* chr = xmalloc(2);
             chr[0] = origin[index];
             chr[1] = '\0';
 
@@ -173,7 +164,7 @@ runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvecto
             return result;
         }
         default:
-            printf("ERROR: unknown builtin function\n");
+            fprintf(stderr, "ERROR: unknown builtin function\n");
             abort();
     }
 }

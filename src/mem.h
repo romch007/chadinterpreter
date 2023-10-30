@@ -8,7 +8,7 @@
 inline void* xmalloc(const size_t size) {
     void* ptr = malloc(size);
     if (ptr == NULL) {
-        printf("ERROR: can't allocate %zu bytes", size);
+        fprintf(stderr, "ERROR: can't allocate %zu bytes", size);
         abort();
     }
     return ptr;
@@ -17,7 +17,7 @@ inline void* xmalloc(const size_t size) {
 inline void* xcalloc(const size_t count, const size_t size) {
     void* ptr = calloc(count, size);
     if (ptr == NULL) {
-        printf("ERROR: can't callocate %zu bytes", size);
+        fprintf(stderr, "ERROR: can't callocate %zu bytes", size);
         abort();
     }
     return ptr;
@@ -26,7 +26,7 @@ inline void* xcalloc(const size_t count, const size_t size) {
 inline void* xrealloc(void* original, const size_t size) {
     void* ptr = realloc(original, size);
     if (ptr == NULL) {
-        printf("ERROR: can't reallocate %zu bytes", size);
+        fprintf(stderr, "ERROR: can't reallocate %zu bytes", size);
         abort();
     }
     return ptr;
