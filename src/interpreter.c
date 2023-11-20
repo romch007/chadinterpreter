@@ -268,7 +268,7 @@ void execute_variable_declaration(context_t* context, statement_t* statement) {
     }
 
     runtime_variable_t variable = {
-            .name = copy_alloc(variable_name),
+            .name = xstrdup(variable_name),
             .is_constant = statement->op.variable_declaration.is_constant,
     };
 
@@ -352,7 +352,7 @@ runtime_value_t evaluate_expr(context_t* context, expr_t* expr) {
                     .type = RUNTIME_TYPE_STRING,
             };
 
-            init_ref_counted(&value.value.string, copy_alloc(expr->op.string_literal));
+            init_ref_counted(&value.value.string, xstrdup(expr->op.string_literal));
 
             return value;
         }
@@ -634,7 +634,7 @@ runtime_value_t evaluate_function_call(context_t* context, const char* fn_name, 
             (*value.value.string.reference_count)++;
         }
         runtime_variable_t variable = {
-                .name = copy_alloc(fn->op.function_declaration.arguments[i]),
+                .name = xstrdup(fn->op.function_declaration.arguments[i]),
                 .is_constant = false,
                 .content = value,
         };

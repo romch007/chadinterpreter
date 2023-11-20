@@ -142,7 +142,7 @@ statement_t* parse_function_declaration(parser_t* parser) {
     if (peek(parser, 0)->type == TOKEN_IDENTIFIER) {
         for (;;) {
             token_t* ident_arg_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
-            cvector_push_back(fn_decl->op.function_declaration.arguments, copy_alloc(ident_arg_name->value.str));
+            cvector_push_back(fn_decl->op.function_declaration.arguments, xstrdup(ident_arg_name->value.str));
 
             if (peek(parser, 0)->type == TOKEN_COMMA) {
                 consume(parser, 1);

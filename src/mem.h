@@ -32,11 +32,13 @@ inline void* xrealloc(void* original, const size_t size) {
     return ptr;
 }
 
-inline char* copy_alloc(const char* str) {
-    size_t len = strlen(str);
-    char* allocated = xmalloc(sizeof(char) * (len + 1));
-    memcpy(allocated, str, len + 1);
-    return allocated;
+inline char* xstrdup(const char* str) {
+    char* ptr = strdup(str);
+    if (ptr == NULL) {
+      printf("ERROR: can't strdup string of length %zu", strlen(str));
+      abort();
+    }
+    return ptr;
 }
 
 inline char* extract_substr(const char* str, size_t start, size_t len) {

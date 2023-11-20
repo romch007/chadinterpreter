@@ -94,7 +94,7 @@ expr_t* make_float_literal(double value) {
 expr_t* make_string_literal(const char* value) {
     expr_t* expr = xmalloc(sizeof(expr_t));
     expr->type = EXPR_STRING_LITERAL;
-    expr->op.string_literal = copy_alloc(value);
+    expr->op.string_literal = xstrdup(value);
     return expr;
 }
 
@@ -107,14 +107,14 @@ expr_t* make_null() {
 expr_t* make_variable_use(const char* name) {
     expr_t* expr = xmalloc(sizeof(expr_t));
     expr->type = EXPR_VARIABLE_USE;
-    expr->op.variable_use.name = copy_alloc(name);
+    expr->op.variable_use.name = xstrdup(name);
     return expr;
 }
 
 expr_t* make_function_call(const char* name) {
     expr_t* expr = xmalloc(sizeof(expr_t));
     expr->type = EXPR_FUNCTION_CALL;
-    expr->op.function_call.name = copy_alloc(name);
+    expr->op.function_call.name = xstrdup(name);
     expr->op.function_call.arguments = NULL;
     return expr;
 }
@@ -225,7 +225,7 @@ statement_t* make_variable_declaration(bool constant, const char* variable_name)
     statement_t* statement = xmalloc(sizeof(statement_t));
     statement->type = STATEMENT_VARIABLE_DECL;
     statement->op.variable_declaration.is_constant = constant;
-    statement->op.variable_declaration.variable_name = copy_alloc(variable_name);
+    statement->op.variable_declaration.variable_name = xstrdup(variable_name);
     statement->op.variable_declaration.value = NULL;
     return statement;
 }
@@ -233,7 +233,7 @@ statement_t* make_variable_declaration(bool constant, const char* variable_name)
 statement_t* make_function_declaration(const char* fn_name) {
     statement_t* statement = xmalloc(sizeof(statement_t));
     statement->type = STATEMENT_FUNCTION_DECL;
-    statement->op.function_declaration.fn_name = copy_alloc(fn_name);
+    statement->op.function_declaration.fn_name = xstrdup(fn_name);
     statement->op.function_declaration.arguments = NULL;
     statement->op.function_declaration.body = NULL;
     return statement;
@@ -242,7 +242,7 @@ statement_t* make_function_declaration(const char* fn_name) {
 statement_t* make_variable_assignment(const char* variable_name, expr_t* value) {
     statement_t* statement = xmalloc(sizeof(statement_t));
     statement->type = STATEMENT_VARIABLE_ASSIGN;
-    statement->op.variable_assignment.variable_name = copy_alloc(variable_name);
+    statement->op.variable_assignment.variable_name = xstrdup(variable_name);
     statement->op.variable_assignment.value = value;
     return statement;
 }

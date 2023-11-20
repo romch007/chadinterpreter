@@ -53,7 +53,7 @@ runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvecto
                     .type = RUNTIME_TYPE_STRING,
             };
 
-            init_ref_counted(&type_string.value.string, copy_alloc(runtime_type_to_string(value.type)));
+            init_ref_counted(&type_string.value.string, xstrdup(runtime_type_to_string(value.type)));
 
             destroy_value(&value);
 
