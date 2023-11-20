@@ -25,6 +25,14 @@ static token_t* expect(parser_t* parser, token_t* token, token_type_t type) {
     return token;
 }
 
+parser_t* create_parser(cvector_vector_type(token_t) tokens) {
+  parser_t* parser = xmalloc(sizeof(parser_t));
+  parser->token_index = 0;
+  parser->tokens = tokens;
+  parser->token_count = cvector_size(tokens);
+  return parser;
+}
+
 statement_t* parse_block(parser_t* parser) {
     statement_t* root = make_block_statement();
 

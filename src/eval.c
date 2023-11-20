@@ -81,12 +81,8 @@ int main(int argc, char** argv) {
     // print_tokens(tokens);
 
     // Parsing
-    parser_t parser = {
-            .token_index = 0,
-            .tokens = tokens,
-            .token_count = cvector_size(tokens),
-    };
-    statement_t* root = parse_block(&parser);
+    parser_t* parser = create_parser(tokens);
+    statement_t* root = parse_block(parser);
 
     cvector_set_elem_destructor(tokens, vector_token_deleter);
     cvector_free(tokens);
@@ -106,5 +102,7 @@ int main(int argc, char** argv) {
 
     destroy_statement(root);
     destroy_context(context);
+    free(parser);
+
     return 0;
 }

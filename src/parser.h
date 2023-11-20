@@ -10,6 +10,8 @@ typedef struct {
     size_t token_index;
 } parser_t;
 
+parser_t* create_parser(cvector_vector_type(token_t) tokens);
+
 statement_t* parse_block(parser_t* parser);
 statement_t* parse_if_condition(parser_t* parser);
 statement_t* parse_variable_declaration(parser_t* parser);
