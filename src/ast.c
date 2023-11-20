@@ -23,7 +23,7 @@ static int indent_offset = 2;
 
 static void print_indent(int indent) {
     for (int i = 0; i < indent; i++) {
-        printf(" ");
+        fprintf(stderr, " ");
     }
 }
 
@@ -123,48 +123,48 @@ void dump_expr(expr_t* expr, int indent) {
     switch (expr->type) {
         case EXPR_BINARY_OPT:
             print_indent(indent);
-            printf("BinaryOperation\n");
+            fprintf(stderr, "BinaryOperation\n");
             dump_expr(expr->op.binary.lhs, indent + indent_offset);
             print_indent(indent + indent_offset);
-            printf("%s\n", binary_op_to_symbol(expr->op.binary.type));
+            fprintf(stderr, "%s\n", binary_op_to_symbol(expr->op.binary.type));
             dump_expr(expr->op.binary.rhs, indent + indent_offset);
             break;
         case EXPR_UNARY_OPT:
             print_indent(indent);
-            printf("UnaryOperation\n");
+            fprintf(stderr, "UnaryOperation\n");
             print_indent(indent + indent_offset);
-            printf("%s\n", unary_op_to_symbol(expr->op.unary.type));
+            fprintf(stderr, "%s\n", unary_op_to_symbol(expr->op.unary.type));
             dump_expr(expr->op.unary.arg, indent + indent_offset);
             break;
         case EXPR_BOOL_LITERAL:
             print_indent(indent);
-            printf("BoolLiteral %s\n", expr->op.bool_literal ? "true" : "false");
+            fprintf(stderr, "BoolLiteral %s\n", expr->op.bool_literal ? "true" : "false");
             break;
         case EXPR_INT_LITERAL:
             print_indent(indent);
-            printf("IntLiteral %d\n", expr->op.integer_literal);
+            fprintf(stderr, "IntLiteral %d\n", expr->op.integer_literal);
             break;
         case EXPR_FLOAT_LITERAL:
             print_indent(indent);
-            printf("FloatLiteral %f\n", expr->op.float_literal);
+            fprintf(stderr, "FloatLiteral %f\n", expr->op.float_literal);
             break;
         case EXPR_STRING_LITERAL:
             print_indent(indent);
-            printf("StringLiteral \"%s\"\n", expr->op.string_literal);
+            fprintf(stderr, "StringLiteral \"%s\"\n", expr->op.string_literal);
             break;
         case EXPR_NULL:
             print_indent(indent);
-            printf("NullLiteral\n");
+            fprintf(stderr, "NullLiteral\n");
             break;
         case EXPR_VARIABLE_USE:
             print_indent(indent);
-            printf("Variable %s\n", expr->op.variable_use.name);
+            fprintf(stderr, "Variable %s\n", expr->op.variable_use.name);
             break;
         case EXPR_FUNCTION_CALL:
             print_indent(indent);
-            printf("FunctionCall\n");
+            fprintf(stderr, "FunctionCall\n");
             print_indent(indent + indent_offset);
-            printf("Identifier %s\n", expr->op.function_call.name);
+            fprintf(stderr, "Identifier %s\n", expr->op.function_call.name);
             if (expr->op.function_call.arguments != NULL) {
                 expr_t** arg;
                 for (arg = cvector_begin(expr->op.function_call.arguments); arg != cvector_end(expr->op.function_call.arguments); ++arg) {
@@ -285,7 +285,7 @@ void dump_statement(statement_t* statement, int indent) {
     switch (statement->type) {
         case STATEMENT_BLOCK: {
             print_indent(indent);
-            printf("(Block)\n");
+            fprintf(stderr, "(Block)\n");
             statement_t** it;
             for (it = cvector_begin(statement->op.block.statements); it != cvector_end(statement->op.block.statements); ++it) {
                 dump_statement(*it, indent + indent_offset);
@@ -294,73 +294,73 @@ void dump_statement(statement_t* statement, int indent) {
         }
         case STATEMENT_IF_CONDITION:
             print_indent(indent);
-            printf("IfStatement\n");
+            fprintf(stderr, "IfStatement\n");
             print_indent(indent);
-            printf("If\n");
+            fprintf(stderr, "If\n");
             dump_expr(statement->op.if_condition.condition, indent + indent_offset);
             dump_statement(statement->op.if_condition.body, indent + indent_offset);
             if (statement->op.if_condition.body_else != NULL) {
                 print_indent(indent);
-                printf("Else\n");
+                fprintf(stderr, "Else\n");
                 dump_statement(statement->op.if_condition.body_else, indent + indent_offset);
             }
             break;
         case STATEMENT_VARIABLE_DECL:
             print_indent(indent);
-            printf("VariableDeclaration\n");
+            fprintf(stderr, "VariableDeclaration\n");
             print_indent(indent + indent_offset);
-            printf("%s\n", statement->op.variable_declaration.is_constant ? "Const" : "Let");
+            fprintf(stderr, "%s\n", statement->op.variable_declaration.is_constant ? "Const" : "Let");
             print_indent(indent + indent_offset);
-            printf("Identifier %s\n", statement->op.variable_declaration.variable_name);
+            fprintf(stderr, "Identifier %s\n", statement->op.variable_declaration.variable_name);
             dump_expr(statement->op.variable_declaration.value, indent + indent_offset);
             break;
         case STATEMENT_FUNCTION_DECL:
             print_indent(indent);
-            printf("FunctionDeclaration\n");
+            fprintf(stderr, "FunctionDeclaration\n");
             print_indent(indent + indent_offset);
-            printf("Identifier %s\n", statement->op.function_declaration.fn_name);
+            fprintf(stderr, "Identifier %s\n", statement->op.function_declaration.fn_name);
 
             if (statement->op.function_declaration.arguments != NULL) {
                 print_indent(indent + indent_offset);
-                printf("Arguments ");
+                fprintf(stderr, "Arguments ");
                 char** arg_name;
                 for (arg_name = cvector_begin(statement->op.function_declaration.arguments); arg_name != cvector_end(statement->op.function_declaration.arguments); ++arg_name) {
-                    printf("%s ", *arg_name);
+                    fprintf(stderr, "%s ", *arg_name);
                 }
-                printf("\n");
+                fprintf(stderr, "\n");
             }
 
             dump_statement(statement->op.function_declaration.body, indent + indent_offset);
             break;
         case STATEMENT_VARIABLE_ASSIGN:
             print_indent(indent);
-            printf("VariableAssignment\n");
+            fprintf(stderr, "VariableAssignment\n");
             print_indent(indent + indent_offset);
-            printf("Identifier %s\n", statement->op.variable_assignment.variable_name);
+            fprintf(stderr, "Identifier %s\n", statement->op.variable_assignment.variable_name);
             dump_expr(statement->op.variable_assignment.value, indent + indent_offset);
             break;
         case STATEMENT_NAKED_FN_CALL:
             print_indent(indent);
-            printf("NakedFunctionCall\n");
+            fprintf(stderr, "NakedFunctionCall\n");
             dump_expr(statement->op.naked_fn_call.function_call, indent + indent_offset);
             break;
         case STATEMENT_WHILE_LOOP:
             print_indent(indent);
-            printf("While\n");
+            fprintf(stderr, "While\n");
             dump_expr(statement->op.while_loop.condition, indent + indent_offset);
             dump_statement(statement->op.while_loop.body, indent + indent_offset);
             break;
         case STATEMENT_BREAK:
             print_indent(indent);
-            printf("BreakStatement\n");
+            fprintf(stderr, "BreakStatement\n");
             break;
         case STATEMENT_CONTINUE:
             print_indent(indent);
-            printf("ContinueStatement\n");
+            fprintf(stderr, "ContinueStatement\n");
             break;
         case STATEMENT_RETURN:
             print_indent(indent);
-            printf("ReturnStatement\n");
+            fprintf(stderr, "ReturnStatement\n");
             if (statement->op.return_statement.value != NULL) {
                 dump_expr(statement->op.return_statement.value, indent + indent_offset);
             }

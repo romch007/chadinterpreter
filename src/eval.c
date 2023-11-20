@@ -88,9 +88,9 @@ int main(int argc, char** argv) {
     cvector_free(tokens);
 
     if (should_print_ast) {
-        printf("--- AST dump ---\n");
+        fprintf(stderr, "--- AST dump ---\n");
         dump_statement(root, 0);
-        printf("----------------\n");
+        fprintf(stderr, "----------------\n");
     }
 
     // Runtime
