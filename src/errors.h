@@ -4,6 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define panic(...) fprintf(stderr, __VA_ARGS__); exit(EXIT_FAILURE)
+#define panic(...) do { fprintf(stderr, __VA_ARGS__); exit(EXIT_FAILURE); } while (0)
 
 #endif
