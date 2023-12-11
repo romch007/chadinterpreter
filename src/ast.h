@@ -45,7 +45,7 @@ const char* unary_op_to_symbol(unary_op_type_t op_type);
 typedef struct expr {
     expr_type_t type;
     union {
-        int integer_literal;
+        long integer_literal;
         char* string_literal;
         bool bool_literal;
         double float_literal;
@@ -71,7 +71,7 @@ typedef struct expr {
 expr_t* make_binary_op(binary_op_type_t type, expr_t* lhs, expr_t* rhs);
 expr_t* make_unary_op(unary_op_type_t type, expr_t* arg);
 expr_t* make_bool_literal(bool value);
-expr_t* make_integer_literal(int value);
+expr_t* make_integer_literal(long value);
 expr_t* make_float_literal(double value);
 expr_t* make_string_literal(const char* value);
 expr_t* make_null();

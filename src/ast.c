@@ -77,7 +77,7 @@ expr_t* make_bool_literal(bool value) {
     return expr;
 }
 
-expr_t* make_integer_literal(int value) {
+expr_t* make_integer_literal(long value) {
     expr_t* expr = xmalloc(sizeof(expr_t));
     expr->type = EXPR_INT_LITERAL;
     expr->op.integer_literal = value;
@@ -142,7 +142,7 @@ void dump_expr(expr_t* expr, int indent) {
             break;
         case EXPR_INT_LITERAL:
             print_indent(indent);
-            fprintf(stderr, "IntLiteral %d\n", expr->op.integer_literal);
+            fprintf(stderr, "IntLiteral %ld\n", expr->op.integer_literal);
             break;
         case EXPR_FLOAT_LITERAL:
             print_indent(indent);

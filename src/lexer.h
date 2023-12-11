@@ -15,7 +15,7 @@ typedef struct {
     int line_nb;
     union {
         char* str;
-        int integer;
+        long integer;
         bool boolean;
         double floating;
     } value;

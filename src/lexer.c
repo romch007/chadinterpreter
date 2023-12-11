@@ -179,7 +179,7 @@ cvector_vector_type(token_t) tokenize(const char* input) {
                 token.value.floating = atof(substr);
             } else {
                 token.type = TOKEN_INT_LITERAL;
-                token.value.integer = atoi(substr);
+                token.value.integer = atol(substr);
             }
 
             free(substr);
@@ -264,7 +264,7 @@ void print_tokens(cvector_vector_type(token_t) tokens) {
     for (token_t* token = cvector_begin(tokens); token != cvector_end(tokens); ++token) {
         printf("%s", token_type_to_string(token->type));
         if (token->type == TOKEN_INT_LITERAL) {
-            printf(" - %d\n", token->value.integer);
+            printf(" - %ld\n", token->value.integer);
         } else if (token->type == TOKEN_IDENTIFIER || token->type == TOKEN_STR_LITERAL) {
             printf(" - %s\n", token->value.str);
         } else {

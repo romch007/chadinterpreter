@@ -141,11 +141,11 @@ runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvecto
                 panic("ERROR: type %s cannot be use as an index\n", runtime_type_to_string(target_value.type));
             }
 
-            int index = index_value.value.integer;
+            long index = index_value.value.integer;
             char* origin = target_value.value.string.data;
 
             if (strlen(origin) <= index || index < 0) {
-                panic("ERROR: index %d is out of bound\n", index);
+                panic("ERROR: index %ld is out of bound\n", index);
             }
 
             char* chr = xmalloc(2);

@@ -17,7 +17,7 @@ typedef struct {
     runtime_type_t type;
     union {
         ref_counted_t string;
-        int integer;
+        long integer;
         bool boolean;
         double floating;
     } value;

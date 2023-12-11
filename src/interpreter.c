@@ -66,7 +66,7 @@ void print_value(const runtime_value_t* value) {
             printf("%s", value->value.string.data ? (char*) value->value.string.data : "(empty)");
             break;
         case RUNTIME_TYPE_INTEGER:
-            printf("%d", value->value.integer);
+            printf("%ld", value->value.integer);
             break;
         case RUNTIME_TYPE_FLOAT:
             printf("%f", value->value.floating);
