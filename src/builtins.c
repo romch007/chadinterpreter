@@ -9,18 +9,11 @@
 #endif
 
 builtin_fn_t is_builtin_fn(const char* fn_name) {
-    if (strcmp(fn_name, "print") == 0) {
-        return BUILTIN_FN_PRINT;
-    } else if (strcmp(fn_name, "type") == 0) {
-        return BUILTIN_FN_TYPE;
-    } else if (strcmp(fn_name, "input") == 0) {
-        return BUILTIN_FN_INPUT;
-    } else if (strcmp(fn_name, "len") == 0) {
-        return BUILTIN_FN_LEN;
-    } else if (strcmp(fn_name, "at") == 0) {
-        return BUILTIN_FN_AT;
+#define CHAD_INTERPRETER_BUILTIN_FN(A, B) \
+    if (strcmp(fn_name, #B) == 0) {       \
+        return BUILTIN_FN_##A;            \
     }
-
+#include "builtin_fns.h"
     return -1;
 }
 

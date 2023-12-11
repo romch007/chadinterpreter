@@ -5,11 +5,8 @@
 #include "ast.h"
 
 typedef enum {
-    BUILTIN_FN_PRINT,
-    BUILTIN_FN_TYPE,
-    BUILTIN_FN_INPUT,
-    BUILTIN_FN_LEN,
-    BUILTIN_FN_AT,
+#define CHAD_INTERPRETER_BUILTIN_FN(A, B) BUILTIN_FN_##A,
+#include "builtin_fns.h"
 } builtin_fn_t;
 
 builtin_fn_t is_builtin_fn(const char* fn_name);
