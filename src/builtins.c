@@ -106,7 +106,7 @@ runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvecto
                 panic("ERROR: cannot use 'len' on type %s\n", runtime_type_to_string(input_value.type));
             }
 
-            int len = (int)strlen(input_value.value.string.data);
+            long len = (long)strlen(input_value.value.string.data);
 
             runtime_value_t len_value = {
                     .type = RUNTIME_TYPE_INTEGER,
