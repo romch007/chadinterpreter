@@ -1,7 +1,7 @@
 #include "interpreter.h"
 #include "builtins.h"
-#include "mem.h"
 #include "errors.h"
+#include "mem.h"
 
 static int variable_compare(const void* a, const void* b, void* udata) {
     const runtime_variable_t* va = a;
@@ -198,6 +198,25 @@ void execute_statement(context_t* context, statement_t* statement) {
 
                 condition = evaluate_expr(context, statement->op.while_loop.condition);
             }
+            pop_stack_frame(context);
+            break;
+        }
+        case STATEMENT_FOR_LOOP: {
+            push_stack_frame(context);
+            for (execute_statement(context, statement->op.for_loop.initializer);
+                evaluate_expr(context, statement->op.for_loop.condition).value.boolean;
+                execute_statement(context, statement->op.for_loop.increment)) {
+
+                execute_statement(context, statement->op.for_loop.body);
+
+                if (context->should_break_loop) {
+                    context->should_break_loop = false;
+                    break;
+                } else if (context->should_continue_loop) {
+                    context->should_continue_loop = false;
+                }
+            }
+
             pop_stack_frame(context);
             break;
         }

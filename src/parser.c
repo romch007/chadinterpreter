@@ -33,58 +33,70 @@ parser_t* create_parser(cvector_vector_type(token_t) tokens) {
   return parser;
 }
 
+statement_t* parse_statement(parser_t* parser) {
+    token_t* token = peek(parser, 0);
+
+    if (token->type == TOKEN_EOS || token->type == TOKEN_CLOSE_BRACE) return NULL;
+
+    statement_t* statement;
+
+    switch (token->type) {
+        case TOKEN_LET:
+        case TOKEN_CONST:
+            statement = parse_variable_declaration(parser);
+            break;
+        case TOKEN_IDENTIFIER:
+            if (peek(parser, 1)->type == TOKEN_OPEN_PAREN) {
+                statement = make_naked_fn_call(parse_function_call(parser));
+                expect(parser, advance(parser), TOKEN_SEMICOLON);
+            } else {
+                statement = parse_variable_assignment(parser);
+            }
+            break;
+        case TOKEN_FN:
+            statement = parse_function_declaration(parser);
+            break;
+        case TOKEN_IF:
+            statement = parse_if_condition(parser);
+            break;
+        case TOKEN_WHILE:
+            statement = parse_while_loop(parser);
+            break;
+        case TOKEN_FOR:
+            statement = parse_for_loop(parser);
+            break;
+        case TOKEN_BREAK:
+            consume(parser, 1);
+            statement = make_break_statement();
+            expect(parser, advance(parser), TOKEN_SEMICOLON);
+            break;
+        case TOKEN_CONTINUE:
+            consume(parser, 1);
+            statement = make_continue_statement();
+            expect(parser, advance(parser), TOKEN_SEMICOLON);
+            break;
+        case TOKEN_RETURN:
+            statement = parse_return_statement(parser);
+            break;
+        case TOKEN_OPEN_BRACE:
+            expect(parser, advance(parser), TOKEN_OPEN_BRACE);
+            statement = parse_block(parser);
+            expect(parser, advance(parser), TOKEN_CLOSE_BRACE);
+            break;
+        default:
+            panic("ERROR: invalid token %s", token_type_to_string(token->type));
+    }
+
+    return statement;
+}
+
 statement_t* parse_block(parser_t* parser) {
     statement_t* root = make_block_statement();
 
     for (;;) {
-        token_t* token = peek(parser, 0);
-        if (token->type == TOKEN_EOS || token->type == TOKEN_CLOSE_BRACE) break;
+        statement_t* statement = parse_statement(parser);
 
-        statement_t* statement = NULL;
-
-        switch (token->type) {
-            case TOKEN_LET:
-            case TOKEN_CONST:
-                statement = parse_variable_declaration(parser);
-                break;
-            case TOKEN_IDENTIFIER:
-                if (peek(parser, 1)->type == TOKEN_OPEN_PAREN) {
-                    statement = make_naked_fn_call(parse_function_call(parser));
-                    expect(parser, advance(parser), TOKEN_SEMICOLON);
-                } else {
-                    statement = parse_variable_assignment(parser);
-                }
-                break;
-            case TOKEN_FN:
-                statement = parse_function_declaration(parser);
-                break;
-            case TOKEN_IF:
-                statement = parse_if_condition(parser);
-                break;
-            case TOKEN_WHILE:
-                statement = parse_while_loop(parser);
-                break;
-            case TOKEN_BREAK:
-                consume(parser, 1);
-                statement = make_break_statement();
-                expect(parser, advance(parser), TOKEN_SEMICOLON);
-                break;
-            case TOKEN_CONTINUE:
-                consume(parser, 1);
-                statement = make_continue_statement();
-                expect(parser, advance(parser), TOKEN_SEMICOLON);
-                break;
-            case TOKEN_RETURN:
-                statement = parse_return_statement(parser);
-                break;
-            case TOKEN_OPEN_BRACE:
-                expect(parser, advance(parser), TOKEN_OPEN_BRACE);
-                statement = parse_block(parser);
-                expect(parser, advance(parser), TOKEN_CLOSE_BRACE);
-                break;
-            default:
-                panic("ERROR: invalid first token %s", token_type_to_string(token->type));
-        }
+        if (statement == NULL) break;
 
         cvector_push_back(root->op.block.statements, statement);
     }
@@ -212,6 +224,25 @@ statement_t* parse_while_loop(parser_t* parser) {
     expect(parser, advance(parser), TOKEN_CLOSE_BRACE);
 
     return make_while_loop(condition, body);
+}
+
+statement_t* parse_for_loop(parser_t* parser) {
+    expect(parser, advance(parser), TOKEN_FOR);
+
+    expect(parser, advance(parser), TOKEN_OPEN_PAREN);
+
+    statement_t* initializer = parse_statement(parser);
+    expr_t* condition = parse_expression(parser);
+    expect(parser, advance(parser), TOKEN_SEMICOLON);
+    statement_t* increment = parse_statement(parser);
+
+    expect(parser, advance(parser), TOKEN_CLOSE_PAREN);
+
+    expect(parser, advance(parser), TOKEN_OPEN_BRACE);
+    statement_t* body = parse_block(parser);
+    expect(parser, advance(parser), TOKEN_CLOSE_BRACE);
+
+    return make_for_loop(initializer, condition, increment, body);
 }
 
 statement_t* parse_return_statement(parser_t* parser) {

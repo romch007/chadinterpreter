@@ -90,6 +90,7 @@ typedef enum {
     STATEMENT_VARIABLE_ASSIGN,
     STATEMENT_NAKED_FN_CALL,
     STATEMENT_WHILE_LOOP,
+    STATEMENT_FOR_LOOP,
     STATEMENT_BREAK,
     STATEMENT_CONTINUE,
     STATEMENT_RETURN,
@@ -128,6 +129,12 @@ typedef struct statement {
             struct statement* body;
         } while_loop;
         struct {
+            struct statement* initializer;
+            expr_t* condition;
+            struct statement* increment;
+            struct statement* body;
+        } for_loop;
+        struct {
             expr_t* value;
         } return_statement;
     } op;
@@ -140,6 +147,7 @@ statement_t* make_function_declaration(const char* fn_name);
 statement_t* make_variable_assignment(const char* variable_name, expr_t* value);
 statement_t* make_naked_fn_call(expr_t* function_call);
 statement_t* make_while_loop(expr_t* condition, statement_t* body);
+statement_t* make_for_loop(statement_t* initializer, expr_t* condition, statement_t* increment, statement_t* body);
 statement_t* make_break_statement();
 statement_t* make_continue_statement();
 statement_t* make_return_statement();

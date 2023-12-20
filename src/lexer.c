@@ -218,6 +218,8 @@ cvector_vector_type(token_t) tokenize(const char* input) {
                 token.value.boolean = false;
             } else if (strcmp(substr, "null") == 0) {
                 token.type = TOKEN_NULL;
+            } else if (strcmp(substr, "for") == 0) {
+                token.type = TOKEN_FOR;
             } else {
                 token.type = TOKEN_IDENTIFIER;
                 token.value.str = substr;

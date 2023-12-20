@@ -262,6 +262,16 @@ statement_t* make_while_loop(expr_t* condition, statement_t* body) {
     return statement;
 }
 
+statement_t* make_for_loop(statement_t* initializer, expr_t* condition, statement_t* increment, statement_t* body) {
+    statement_t* statement = xmalloc(sizeof(statement_t));
+    statement->type = STATEMENT_FOR_LOOP;
+    statement->op.for_loop.initializer = initializer;
+    statement->op.for_loop.condition = condition;
+    statement->op.for_loop.increment = increment;
+    statement->op.for_loop.body = body;
+    return statement;
+}
+
 statement_t* make_break_statement() {
     statement_t* statement = xmalloc(sizeof(statement_t));
     statement->type = STATEMENT_BREAK;
@@ -350,6 +360,14 @@ void dump_statement(statement_t* statement, int indent) {
             dump_expr(statement->op.while_loop.condition, indent + indent_offset);
             dump_statement(statement->op.while_loop.body, indent + indent_offset);
             break;
+        case STATEMENT_FOR_LOOP:
+            print_indent(indent);
+            fprintf(stderr, "For\n");
+            dump_statement(statement->op.for_loop.initializer, indent + indent_offset);
+            dump_expr(statement->op.for_loop.condition, indent + indent_offset);
+            dump_statement(statement->op.for_loop.increment, indent + indent_offset);
+            dump_statement(statement->op.for_loop.body, indent + indent_offset);
+            break;
         case STATEMENT_BREAK:
             print_indent(indent);
             fprintf(stderr, "BreakStatement\n");
@@ -401,6 +419,12 @@ void destroy_statement(statement_t* statement) {
         case STATEMENT_WHILE_LOOP:
             destroy_expr(statement->op.while_loop.condition);
             destroy_statement(statement->op.while_loop.body);
+            break;
+        case STATEMENT_FOR_LOOP:
+            destroy_statement(statement->op.for_loop.initializer);
+            destroy_expr(statement->op.for_loop.condition);
+            destroy_statement(statement->op.for_loop.increment);
+            destroy_statement(statement->op.for_loop.body);
             break;
         case STATEMENT_RETURN:
             destroy_expr(statement->op.return_statement.value);

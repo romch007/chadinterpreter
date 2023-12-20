@@ -12,12 +12,14 @@ typedef struct {
 
 parser_t* create_parser(cvector_vector_type(token_t) tokens);
 
+statement_t* parse_statement(parser_t* parser);
 statement_t* parse_block(parser_t* parser);
 statement_t* parse_if_condition(parser_t* parser);
 statement_t* parse_variable_declaration(parser_t* parser);
 statement_t* parse_function_declaration(parser_t* parser);
 statement_t* parse_variable_assignment(parser_t* parser);
 statement_t* parse_while_loop(parser_t* parser);
+statement_t* parse_for_loop(parser_t* parser);
 statement_t* parse_return_statement(parser_t* parser);
 
 expr_t* parse_expression(parser_t* parser);
