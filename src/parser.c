@@ -2,21 +2,21 @@
 #include <stdio.h>
 #include "errors.h"
 
-static void consume(parser_t* parser, size_t count) {
+static void consume(struct parser* parser, size_t count) {
     parser->token_index += count;
 }
 
-static token_t* peek(parser_t* parser, size_t advance) {
+static struct token* peek(struct parser* parser, size_t advance) {
     return &parser->tokens[parser->token_index + advance];
 }
 
-static token_t* advance(parser_t* parser) {
-    token_t* token = peek(parser, 0);
+static struct token* advance(struct parser* parser) {
+    struct token* token = peek(parser, 0);
     parser->token_index++;
     return token;
 }
 
-static token_t* expect(parser_t* parser, token_t* token, token_type_t type) {
+static struct token* expect(struct parser* parser, struct token* token, enum token_type type) {
     if (token == NULL)
         token = peek(parser, 0);
     if (token->type != type) {
@@ -25,20 +25,20 @@ static token_t* expect(parser_t* parser, token_t* token, token_type_t type) {
     return token;
 }
 
-parser_t* create_parser(cvector_vector_type(token_t) tokens) {
-  parser_t* parser = xmalloc(sizeof(parser_t));
+struct parser* create_parser(cvector_vector_type(struct token) tokens) {
+  struct parser* parser = xmalloc(sizeof(struct parser));
   parser->token_index = 0;
   parser->tokens = tokens;
   parser->token_count = cvector_size(tokens);
   return parser;
 }
 
-statement_t* parse_statement(parser_t* parser) {
-    token_t* token = peek(parser, 0);
+struct statement* parse_statement(struct parser* parser) {
+    struct token* token = peek(parser, 0);
 
     if (token->type == TOKEN_EOS || token->type == TOKEN_CLOSE_BRACE) return NULL;
 
-    statement_t* statement;
+    struct statement* statement;
 
     switch (token->type) {
         case TOKEN_LET:
@@ -90,11 +90,11 @@ statement_t* parse_statement(parser_t* parser) {
     return statement;
 }
 
-statement_t* parse_block(parser_t* parser) {
-    statement_t* root = make_block_statement();
+struct statement* parse_block(struct parser* parser) {
+    struct statement* root = make_block_statement();
 
     for (;;) {
-        statement_t* statement = parse_statement(parser);
+        struct statement* statement = parse_statement(parser);
 
         if (statement == NULL) break;
 
@@ -104,18 +104,18 @@ statement_t* parse_block(parser_t* parser) {
     return root;
 }
 
-statement_t* parse_if_condition(parser_t* parser) {
+struct statement* parse_if_condition(struct parser* parser) {
     expect(parser, advance(parser), TOKEN_IF);
 
     expect(parser, advance(parser), TOKEN_OPEN_PAREN);
-    expr_t* condition = parse_expression(parser);
+    struct expr* condition = parse_expression(parser);
     expect(parser, advance(parser), TOKEN_CLOSE_PAREN);
 
     expect(parser, advance(parser), TOKEN_OPEN_BRACE);
-    statement_t* body = parse_block(parser);
+    struct statement* body = parse_block(parser);
     expect(parser, advance(parser), TOKEN_CLOSE_BRACE);
 
-    statement_t* if_condition = make_if_condition_statement(condition, body);
+    struct statement* if_condition = make_if_condition_statement(condition, body);
 
     if (peek(parser, 0)->type == TOKEN_ELSE) {
         consume(parser, 1);
@@ -132,14 +132,14 @@ statement_t* parse_if_condition(parser_t* parser) {
     return if_condition;
 }
 
-statement_t* parse_variable_declaration(parser_t* parser) {
-    token_t* decl_op = advance(parser);
+struct statement* parse_variable_declaration(struct parser* parser) {
+    struct token* decl_op = advance(parser);
     bool constant = decl_op->type == TOKEN_CONST;
 
-    token_t* ident_variable_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
+    struct token* ident_variable_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
     char* variable_name = ident_variable_name->value.str;
 
-    statement_t* variable_declaration = make_variable_declaration(constant, variable_name);
+    struct statement* variable_declaration = make_variable_declaration(constant, variable_name);
 
     if (peek(parser, 0)->type == TOKEN_EQUAL) {
         consume(parser, 1);
@@ -151,17 +151,17 @@ statement_t* parse_variable_declaration(parser_t* parser) {
     return variable_declaration;
 }
 
-statement_t* parse_function_declaration(parser_t* parser) {
+struct statement* parse_function_declaration(struct parser* parser) {
     expect(parser, advance(parser), TOKEN_FN);
-    token_t* ident_fn_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
+    struct token* ident_fn_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
 
-    statement_t* fn_decl = make_function_declaration(ident_fn_name->value.str);
+    struct statement* fn_decl = make_function_declaration(ident_fn_name->value.str);
 
     expect(parser, advance(parser), TOKEN_OPEN_PAREN);
 
     if (peek(parser, 0)->type == TOKEN_IDENTIFIER) {
         for (;;) {
-            token_t* ident_arg_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
+            struct token* ident_arg_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
             cvector_push_back(fn_decl->op.function_declaration.arguments, xstrdup(ident_arg_name->value.str));
 
             if (peek(parser, 0)->type == TOKEN_COMMA) {
@@ -181,10 +181,10 @@ statement_t* parse_function_declaration(parser_t* parser) {
     return fn_decl;
 }
 
-statement_t* parse_variable_assignment(parser_t* parser) {
-    token_t* ident_variable_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
+struct statement* parse_variable_assignment(struct parser* parser) {
+    struct token* ident_variable_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
     char* variable_name = ident_variable_name->value.str;
-    expr_t* value = NULL;
+    struct expr* value = NULL;
 
     if (peek(parser, 0)->type == TOKEN_PLUS_EQUAL) {
         consume(parser, 1);
@@ -212,43 +212,43 @@ statement_t* parse_variable_assignment(parser_t* parser) {
     return make_variable_assignment(variable_name, value);
 }
 
-statement_t* parse_while_loop(parser_t* parser) {
+struct statement* parse_while_loop(struct parser* parser) {
     expect(parser, advance(parser), TOKEN_WHILE);
 
     expect(parser, advance(parser), TOKEN_OPEN_PAREN);
-    expr_t* condition = parse_expression(parser);
+    struct expr* condition = parse_expression(parser);
     expect(parser, advance(parser), TOKEN_CLOSE_PAREN);
 
     expect(parser, advance(parser), TOKEN_OPEN_BRACE);
-    statement_t* body = parse_block(parser);
+    struct statement* body = parse_block(parser);
     expect(parser, advance(parser), TOKEN_CLOSE_BRACE);
 
     return make_while_loop(condition, body);
 }
 
-statement_t* parse_for_loop(parser_t* parser) {
+struct statement* parse_for_loop(struct parser* parser) {
     expect(parser, advance(parser), TOKEN_FOR);
 
     expect(parser, advance(parser), TOKEN_OPEN_PAREN);
 
-    statement_t* initializer = parse_statement(parser);
-    expr_t* condition = parse_expression(parser);
+    struct statement* initializer = parse_statement(parser);
+    struct expr* condition = parse_expression(parser);
     expect(parser, advance(parser), TOKEN_SEMICOLON);
-    statement_t* increment = parse_statement(parser);
+    struct statement* increment = parse_statement(parser);
 
     expect(parser, advance(parser), TOKEN_CLOSE_PAREN);
 
     expect(parser, advance(parser), TOKEN_OPEN_BRACE);
-    statement_t* body = parse_block(parser);
+    struct statement* body = parse_block(parser);
     expect(parser, advance(parser), TOKEN_CLOSE_BRACE);
 
     return make_for_loop(initializer, condition, increment, body);
 }
 
-statement_t* parse_return_statement(parser_t* parser) {
+struct statement* parse_return_statement(struct parser* parser) {
     expect(parser, advance(parser), TOKEN_RETURN);
 
-    statement_t* return_stmt = make_return_statement();
+    struct statement* return_stmt = make_return_statement();
 
     if (peek(parser, 0)->type != TOKEN_SEMICOLON) {
         return_stmt->op.return_statement.value = parse_expression(parser);
@@ -259,12 +259,12 @@ statement_t* parse_return_statement(parser_t* parser) {
     return return_stmt;
 }
 
-expr_t* parse_expression(parser_t* parser) {
-    expr_t* expr = parse_term(parser);
+struct expr* parse_expression(struct parser* parser) {
+    struct expr* expr = parse_term(parser);
 
     for (;;) {
-        token_t* token = peek(parser, 0);
-        binary_op_type_t op_type;
+        struct token* token = peek(parser, 0);
+        enum binary_op_type op_type;
 
         bool invalid = false;
         switch (token->type) {
@@ -308,12 +308,12 @@ expr_t* parse_expression(parser_t* parser) {
     return expr;
 }
 
-expr_t* parse_term(parser_t* parser) {
-    expr_t* expr = parse_factor(parser);
+struct expr* parse_term(struct parser* parser) {
+    struct expr* expr = parse_factor(parser);
 
     for (;;) {
-        token_t* token = peek(parser, 0);
-        binary_op_type_t op_type;
+        struct token* token = peek(parser, 0);
+        enum binary_op_type op_type;
 
         bool invalid = false;
         switch (token->type) {
@@ -342,9 +342,9 @@ expr_t* parse_term(parser_t* parser) {
     return expr;
 }
 
-expr_t* parse_factor(parser_t* parser) {
-    expr_t* expr;
-    token_t* token = peek(parser, 0);
+struct expr* parse_factor(struct parser* parser) {
+    struct expr* expr;
+    struct token* token = peek(parser, 0);
 
     switch (token->type) {
         case TOKEN_BOOL_LITERAL:
@@ -399,14 +399,14 @@ expr_t* parse_factor(parser_t* parser) {
     return expr;
 }
 
-expr_t* parse_function_call(parser_t* parser) {
-    token_t* ident_fn_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
+struct expr* parse_function_call(struct parser* parser) {
+    struct token* ident_fn_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
 
     expect(parser, advance(parser), TOKEN_OPEN_PAREN);
-    expr_t* function_call = make_function_call(ident_fn_name->value.str);
+    struct expr* function_call = make_function_call(ident_fn_name->value.str);
 
     while (peek(parser, 0)->type != TOKEN_CLOSE_PAREN) {
-        expr_t* argument = parse_expression(parser);
+        struct expr* argument = parse_expression(parser);
         cvector_push_back(function_call->op.function_call.arguments, argument);
 
         if (peek(parser, 0)->type != TOKEN_COMMA)

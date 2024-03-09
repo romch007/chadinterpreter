@@ -18,7 +18,7 @@ static char peek(int advance) {
 }
 
 void vector_token_deleter(void* element) {
-    token_t* token = (token_t*) element;
+    struct token* token = (struct token*) element;
     if (token->type == TOKEN_IDENTIFIER || token->type == TOKEN_STR_LITERAL) {
         free(token->value.str);
     }
@@ -32,17 +32,17 @@ static bool is_valid_identifier(char c) {
     return c == '_' || isalpha(c);
 }
 
-cvector_vector_type(token_t) tokenize(const char* input) {
+cvector_vector_type(struct token) tokenize(const char* input) {
     current_pos = 0;
     s_input = input;
     input_len = strlen(input);
-    cvector_vector_type(token_t) tokens = NULL;
+    cvector_vector_type(struct token) tokens = NULL;
     int current_line = 1;
 
     for (;;) {
         char c = peek(0);
         bool ignore = false;
-        token_t token;
+        struct token token;
 
         if (c == '\0') {
             token.type = TOKEN_EOS;
@@ -252,7 +252,7 @@ cvector_vector_type(token_t) tokenize(const char* input) {
     return tokens;
 }
 
-const char* token_type_to_string(token_type_t type) {
+const char* token_type_to_string(enum token_type type) {
     switch (type) {
 #define CHAD_INTERPRETER_TOKEN(X) \
     case TOKEN_##X:               \
@@ -262,8 +262,8 @@ const char* token_type_to_string(token_type_t type) {
     return NULL;
 }
 
-void print_tokens(cvector_vector_type(token_t) tokens) {
-    for (token_t* token = cvector_begin(tokens); token != cvector_end(tokens); ++token) {
+void print_tokens(cvector_vector_type(struct token) tokens) {
+    for (struct token* token = cvector_begin(tokens); token != cvector_end(tokens); ++token) {
         printf("%s", token_type_to_string(token->type));
         if (token->type == TOKEN_INT_LITERAL) {
             printf(" - %ld\n", token->value.integer);

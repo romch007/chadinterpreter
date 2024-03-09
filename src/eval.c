@@ -76,13 +76,13 @@ int main(int argc, char** argv) {
     char* content = read_file_content(argv[optind]);
 
     // Lexing
-    cvector_vector_type(token_t) tokens = tokenize(content);
+    cvector_vector_type(struct token) tokens = tokenize(content);
     free(content);
     // print_tokens(tokens);
 
     // Parsing
-    parser_t* parser = create_parser(tokens);
-    statement_t* root = parse_block(parser);
+    struct parser* parser = create_parser(tokens);
+    struct statement* root = parse_block(parser);
 
     cvector_set_elem_destructor(tokens, vector_token_deleter);
     cvector_free(tokens);
@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
     }
 
     // Runtime
-    context_t* context = create_context();
+    struct context* context = create_context();
 
     push_stack_frame(context);
     execute_statement(context, root);

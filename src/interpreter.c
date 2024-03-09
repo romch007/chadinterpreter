@@ -4,31 +4,31 @@
 #include "mem.h"
 
 static int variable_compare(const void* a, const void* b, void* udata) {
-    const runtime_variable_t* va = a;
-    const runtime_variable_t* vb = b;
+    const struct runtime_variable* va = a;
+    const struct runtime_variable* vb = b;
 
     return strcmp(va->name, vb->name);
 }
 
 static uint64_t variable_hash(const void* item, uint64_t seed0, uint64_t seed1) {
-    const runtime_variable_t* v = item;
+    const struct runtime_variable* v = item;
     return hashmap_xxhash3(v->name, strlen(v->name), seed0, seed1);
 }
 
 static int function_compare(const void* a, const void* b, void* udata) {
-    const statement_t** fa = (const statement_t**) a;
-    const statement_t** fb = (const statement_t**) b;
+    const struct statement** fa = (const struct statement**) a;
+    const struct statement** fb = (const struct statement**) b;
 
     return strcmp((*fa)->op.function_declaration.fn_name, (*fb)->op.function_declaration.fn_name);
 }
 
 static uint64_t function_hash(const void* item, uint64_t seed0, uint64_t seed1) {
-    const statement_t** f = (const statement_t**) item;
+    const struct statement** f = (const struct statement**) item;
     return hashmap_xxhash3((*f)->op.function_declaration.fn_name, strlen((*f)->op.function_declaration.fn_name), seed0, seed1);
 }
 
-context_t* create_context() {
-    context_t* context = xmalloc(sizeof(context_t));
+struct context* create_context() {
+    struct context* context = xmalloc(sizeof(struct context));
     context->frames = NULL;
     context->should_break_loop = false;
     context->should_continue_loop = false;
@@ -37,30 +37,30 @@ context_t* create_context() {
     return context;
 }
 
-static stack_frame_t* get_current_stack_frame(context_t* context) {
+static struct stack_frame* get_current_stack_frame(struct context* context) {
     return cvector_end(context->frames) - 1;
 }
 
-void dump_context(context_t* context) {
+void dump_context(struct context* context) {
     printf("--- variables ---\n");
-    stack_frame_t* it;
+    struct stack_frame* it;
     for (it = cvector_begin(context->frames); it != cvector_end(context->frames); it++) {
         dump_stack_frame(it);
     }
 }
 
 
-void dump_stack_frame(stack_frame_t* frame) {
+void dump_stack_frame(struct stack_frame* frame) {
     size_t iter = 0;
     void* item;
     while (hashmap_iter(frame->variables, &iter, &item)) {
-        const runtime_variable_t* variable = item;
+        const struct runtime_variable* variable = item;
         printf("%s: %s = ", variable->name, runtime_type_to_string(variable->content.type));
         print_value(&variable->content);
     }
 }
 
-void print_value(const runtime_value_t* value) {
+void print_value(const struct runtime_value* value) {
     switch (value->type) {
         case RUNTIME_TYPE_STRING:
             printf("%s", value->value.string.data ? (char*) value->value.string.data : "(empty)");
@@ -80,7 +80,7 @@ void print_value(const runtime_value_t* value) {
     }
 }
 
-void destroy_value(const runtime_value_t* value) {
+void destroy_value(const struct runtime_value* value) {
     // Destroy the content if no reference are held anymore
     if (value->type == RUNTIME_TYPE_STRING && *value->value.string.reference_count <= 0) {
         free(value->value.string.data);
@@ -88,7 +88,7 @@ void destroy_value(const runtime_value_t* value) {
     }
 }
 
-void destroy_context(context_t* context) {
+void destroy_context(struct context* context) {
     for (int i = 0; i < cvector_size(context->frames); i++) {
         pop_stack_frame(context);
     }
@@ -96,22 +96,22 @@ void destroy_context(context_t* context) {
     free(context);
 }
 
-void push_stack_frame(context_t* context) {
-    stack_frame_t frame = {
-            .variables = hashmap_new(sizeof(runtime_variable_t), 0, 0, 0, variable_hash, variable_compare, NULL, NULL),
-            .functions = hashmap_new(sizeof(statement_t*), 0, 0, 0, function_hash, function_compare, NULL, NULL),
+void push_stack_frame(struct context* context) {
+    struct stack_frame frame = {
+            .variables = hashmap_new(sizeof(struct runtime_variable), 0, 0, 0, variable_hash, variable_compare, NULL, NULL),
+            .functions = hashmap_new(sizeof(struct statement*), 0, 0, 0, function_hash, function_compare, NULL, NULL),
     };
 
     cvector_push_back(context->frames, frame);
 }
 
-void pop_stack_frame(context_t* context) {
-    stack_frame_t* frame = get_current_stack_frame(context);
+void pop_stack_frame(struct context* context) {
+    struct stack_frame* frame = get_current_stack_frame(context);
     // Free variables
     size_t iter = 0;
     void* item;
     while (hashmap_iter(frame->variables, &iter, &item)) {
-        const runtime_variable_t* variable = item;
+        const struct runtime_variable* variable = item;
         free(variable->name);
 
         // If the variable content is reference-counted, decrement the reference count
@@ -126,14 +126,14 @@ void pop_stack_frame(context_t* context) {
     cvector_pop_back(context->frames);
 }
 
-void execute_statement(context_t* context, statement_t* statement) {
+void execute_statement(struct context* context, struct statement* statement) {
     switch (statement->type) {
         case STATEMENT_BLOCK: {
-            cvector_vector_type(statement_t*) statements = statement->op.block.statements;
+            cvector_vector_type(struct statement*) statements = statement->op.block.statements;
 
-            statement_t** it;
+            struct statement** it;
             for (it = cvector_begin(statements); it != cvector_end(statements); ++it) {
-                statement_t* current_statement = *it;
+                struct statement* current_statement = *it;
                 execute_statement(context, current_statement);
 
                 if (context->should_break_loop || context->should_continue_loop || context->should_return_fn)
@@ -150,7 +150,7 @@ void execute_statement(context_t* context, statement_t* statement) {
             hashmap_set(get_current_stack_frame(context)->functions, &statement);
             break;
         case STATEMENT_NAKED_FN_CALL: {
-            runtime_value_t discarded_return_value = evaluate_expr(context, statement->op.naked_fn_call.function_call);
+            struct runtime_value discarded_return_value = evaluate_expr(context, statement->op.naked_fn_call.function_call);
 
             destroy_value(&discarded_return_value);
             break;
@@ -160,14 +160,14 @@ void execute_statement(context_t* context, statement_t* statement) {
             break;
         }
         case STATEMENT_IF_CONDITION: {
-            runtime_value_t condition = evaluate_expr(context, statement->op.if_condition.condition);
+            struct runtime_value condition = evaluate_expr(context, statement->op.if_condition.condition);
 
             if (condition.type != RUNTIME_TYPE_BOOLEAN) {
                 panic("ERROR: found a value of type %s in a if condition\n", runtime_type_to_string(condition.type));
             }
 
-            statement_t* body = statement->op.if_condition.body;
-            statement_t* body_else = statement->op.if_condition.body_else;
+            struct statement* body = statement->op.if_condition.body;
+            struct statement* body_else = statement->op.if_condition.body_else;
 
             push_stack_frame(context);
             if (condition.value.boolean) {
@@ -179,7 +179,7 @@ void execute_statement(context_t* context, statement_t* statement) {
             break;
         }
         case STATEMENT_WHILE_LOOP: {
-            runtime_value_t condition = evaluate_expr(context, statement->op.while_loop.condition);
+            struct runtime_value condition = evaluate_expr(context, statement->op.while_loop.condition);
 
             if (condition.type != RUNTIME_TYPE_BOOLEAN) {
                 panic("ERROR: found a value of type %s in a while condition\n", runtime_type_to_string(condition.type));
@@ -228,7 +228,7 @@ void execute_statement(context_t* context, statement_t* statement) {
             break;
         case STATEMENT_RETURN:
             if (statement->op.return_statement.value != NULL) {
-                runtime_value_t return_value = evaluate_expr(context, statement->op.return_statement.value);
+                struct runtime_value return_value = evaluate_expr(context, statement->op.return_statement.value);
 
                 context->has_return_value = true;
                 context->return_value = return_value;
@@ -241,12 +241,12 @@ void execute_statement(context_t* context, statement_t* statement) {
     }
 }
 
-void execute_variable_assignment(context_t* context, statement_t* statement) {
+void execute_variable_assignment(struct context* context, struct statement* statement) {
     char* variable_name = statement->op.variable_assignment.variable_name;
 
     int stack_index;
 
-    const runtime_variable_t* old_variable = get_variable(context, variable_name, &stack_index);
+    const struct runtime_variable* old_variable = get_variable(context, variable_name, &stack_index);
 
     if (old_variable == NULL) {
         panic("ERROR: cannot find variable '%s'\n", variable_name);
@@ -256,7 +256,7 @@ void execute_variable_assignment(context_t* context, statement_t* statement) {
         panic("ERROR: variable '%s' is constant\n", variable_name);
     }
 
-    runtime_value_t new_content = evaluate_expr(context, statement->op.variable_assignment.value);
+    struct runtime_value new_content = evaluate_expr(context, statement->op.variable_assignment.value);
 
     if (old_variable->content.type != new_content.type) {
         panic("ERROR: cannot assign value of type %s to variable '%s' of type %s\n", runtime_type_to_string(new_content.type), variable_name, runtime_type_to_string(old_variable->content.type));
@@ -267,7 +267,7 @@ void execute_variable_assignment(context_t* context, statement_t* statement) {
         (*new_content.value.string.reference_count)++;
     }
 
-    runtime_variable_t variable = {
+    struct runtime_variable variable = {
             .name = old_variable->name,
             .content = new_content,
             .is_constant = false,
@@ -276,17 +276,17 @@ void execute_variable_assignment(context_t* context, statement_t* statement) {
     hashmap_set(context->frames[stack_index].variables, &variable);
 }
 
-void execute_variable_declaration(context_t* context, statement_t* statement) {
+void execute_variable_declaration(struct context* context, struct statement* statement) {
     char* variable_name = statement->op.variable_declaration.variable_name;
 
     // Check if this declaration is shadowing a constant variable
-    const runtime_variable_t* old_variable = get_variable(context, variable_name, NULL);
+    const struct runtime_variable* old_variable = get_variable(context, variable_name, NULL);
 
     if (old_variable != NULL && old_variable->is_constant == true) {
         panic("ERROR: declaration of '%s' is shadowing a constant variable\n", variable_name);
-    }
+}
 
-    runtime_variable_t variable = {
+    struct runtime_variable variable = {
             .name = xstrdup(variable_name),
             .is_constant = statement->op.variable_declaration.is_constant,
     };
@@ -294,7 +294,7 @@ void execute_variable_declaration(context_t* context, statement_t* statement) {
     if (statement->op.variable_declaration.value == NULL) {
         variable.content.type = RUNTIME_TYPE_NULL;
     } else {
-        runtime_value_t value = evaluate_expr(context, statement->op.variable_declaration.value);
+        struct runtime_value value = evaluate_expr(context, statement->op.variable_declaration.value);
 
         variable.content = value;
     }
@@ -307,11 +307,11 @@ void execute_variable_declaration(context_t* context, statement_t* statement) {
     hashmap_set(get_current_stack_frame(context)->variables, &variable);
 }
 
-const runtime_variable_t* get_variable(context_t* context, const char* variable_name, int* stack_index) {
-    stack_frame_t* it;
+const struct runtime_variable* get_variable(struct context* context, const char* variable_name, int* stack_index) {
+    struct stack_frame* it;
     int i = cvector_size(context->frames) - 1;
     for (it = cvector_end(context->frames); it-- != cvector_begin(context->frames);) {
-        const runtime_variable_t* variable = (const runtime_variable_t*) hashmap_get(it->variables, &(runtime_variable_t){.name = (char*) variable_name});
+        const struct runtime_variable* variable = (const struct runtime_variable*) hashmap_get(it->variables, &(struct runtime_variable){.name = (char*) variable_name});
 
         if (variable != NULL) {
             if (stack_index != NULL) *stack_index = i;
@@ -324,13 +324,13 @@ const runtime_variable_t* get_variable(context_t* context, const char* variable_
     return NULL;
 }
 
-const statement_t* get_function(context_t* context, const char* fn_name, int* stack_index) {
-    stack_frame_t* it;
+const struct statement* get_function(struct context* context, const char* fn_name, int* stack_index) {
+    struct stack_frame* it;
     int i = cvector_size(context->frames) - 1;
     for (it = cvector_end(context->frames); it-- != cvector_begin(context->frames);) {
-        statement_t search_term = {.type = STATEMENT_FUNCTION_DECL, .op.function_declaration.fn_name = (char*) fn_name};
-        statement_t* search_term_ptr = &search_term;
-        const statement_t** fn = (const statement_t**) hashmap_get(it->functions, &search_term_ptr);
+        struct statement search_term = {.type = STATEMENT_FUNCTION_DECL, .op.function_declaration.fn_name = (char*) fn_name};
+        struct statement* search_term_ptr = &search_term;
+        const struct statement** fn = (const struct statement**) hashmap_get(it->functions, &search_term_ptr);
 
         if (fn != NULL) {
             if (stack_index != NULL) *stack_index = i;
@@ -343,31 +343,31 @@ const statement_t* get_function(context_t* context, const char* fn_name, int* st
     return NULL;
 }
 
-runtime_value_t evaluate_expr(context_t* context, expr_t* expr) {
+struct runtime_value evaluate_expr(struct context* context, struct expr* expr) {
     switch (expr->type) {
         case EXPR_BOOL_LITERAL: {
-            runtime_value_t value = {
+            struct runtime_value value = {
                     .type = RUNTIME_TYPE_BOOLEAN,
                     .value.boolean = expr->op.bool_literal};
 
             return value;
         }
         case EXPR_INT_LITERAL: {
-            runtime_value_t value = {
+            struct runtime_value value = {
                     .type = RUNTIME_TYPE_INTEGER,
                     .value.integer = expr->op.integer_literal};
 
             return value;
         }
         case EXPR_FLOAT_LITERAL: {
-            runtime_value_t value = {
+            struct runtime_value value = {
                     .type = RUNTIME_TYPE_FLOAT,
                     .value.floating = expr->op.float_literal};
 
             return value;
         }
         case EXPR_STRING_LITERAL: {
-            runtime_value_t value = {
+            struct runtime_value value = {
                     .type = RUNTIME_TYPE_STRING,
             };
 
@@ -376,7 +376,7 @@ runtime_value_t evaluate_expr(context_t* context, expr_t* expr) {
             return value;
         }
         case EXPR_NULL: {
-            runtime_value_t value = {
+            struct runtime_value value = {
                     .type = RUNTIME_TYPE_NULL,
             };
 
@@ -385,7 +385,7 @@ runtime_value_t evaluate_expr(context_t* context, expr_t* expr) {
         case EXPR_VARIABLE_USE: {
             char* variable_name = expr->op.variable_use.name;
 
-            const runtime_variable_t* variable = get_variable(context, variable_name, NULL);
+            const struct runtime_variable* variable = get_variable(context, variable_name, NULL);
 
             if (variable == NULL) {
                 panic("ERROR: cannot find variable '%s'\n", variable_name);
@@ -406,17 +406,17 @@ runtime_value_t evaluate_expr(context_t* context, expr_t* expr) {
     }
 }
 
-runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type, expr_t* lhs, expr_t* rhs) {
-    runtime_value_t lhs_value = evaluate_expr(context, lhs);
-    runtime_value_t rhs_value = evaluate_expr(context, rhs);
+struct runtime_value evaluate_binary_op(struct context* context, enum binary_op_type op_type, struct expr* lhs, struct expr* rhs) {
+    struct runtime_value lhs_value = evaluate_expr(context, lhs);
+    struct runtime_value rhs_value = evaluate_expr(context, rhs);
 
     if (lhs_value.type != rhs_value.type) {
         panic("ERROR: type mismatch between %s and %s\n", runtime_type_to_string(lhs_value.type), runtime_type_to_string(rhs_value.type));
     }
 
-    runtime_type_t value_type = lhs_value.type;
+    enum runtime_type value_type = lhs_value.type;
 
-    runtime_value_t result_value;
+    struct runtime_value result_value;
 
     if (is_arithmetic_binary_op(op_type)) {
         if (op_type == BINARY_OP_ADD && value_type == RUNTIME_TYPE_STRING) {
@@ -572,10 +572,10 @@ runtime_value_t evaluate_binary_op(context_t* context, binary_op_type_t op_type,
     return result_value;
 }
 
-runtime_value_t evaluate_unary_op(context_t* context, unary_op_type_t op_type, expr_t* arg) {
-    runtime_value_t arg_value = evaluate_expr(context, arg);
+struct runtime_value evaluate_unary_op(struct context* context, enum unary_op_type op_type, struct expr* arg) {
+    struct runtime_value arg_value = evaluate_expr(context, arg);
 
-    runtime_value_t result_value;
+    struct runtime_value result_value;
 
     if (op_type == UNARY_OP_NOT) {
         if (arg_value.type != RUNTIME_TYPE_BOOLEAN) {
@@ -613,8 +613,8 @@ runtime_value_t evaluate_unary_op(context_t* context, unary_op_type_t op_type, e
     return result_value;
 }
 
-runtime_value_t evaluate_function_call(context_t* context, const char* fn_name, cvector_vector_type(expr_t*) arguments) {
-    runtime_value_t return_value = {
+struct runtime_value evaluate_function_call(struct context* context, const char* fn_name, cvector_vector_type(struct expr*) arguments) {
+    struct runtime_value return_value = {
             .type = RUNTIME_TYPE_NULL};
 
     builtin_fn_t fn_type;
@@ -622,7 +622,7 @@ runtime_value_t evaluate_function_call(context_t* context, const char* fn_name, 
         return execute_builtin(context, fn_type, arguments);
     }
 
-    const statement_t* fn = get_function(context, fn_name, NULL);
+    const struct statement* fn = get_function(context, fn_name, NULL);
 
     if (fn == NULL) {
         panic("ERROR: cannot find function %s\n", fn_name);
@@ -638,21 +638,21 @@ runtime_value_t evaluate_function_call(context_t* context, const char* fn_name, 
     push_stack_frame(context);
 
     // Evaluate arguments
-    cvector_vector_type(runtime_value_t) evaluated_arguments = NULL;
+    cvector_vector_type(struct runtime_value) evaluated_arguments = NULL;
     cvector_init(evaluated_arguments, cvector_size(arguments), NULL);
-    expr_t** arg_value;
+    struct expr** arg_value;
     for (arg_value = cvector_begin(arguments); arg_value != cvector_end(arguments); ++arg_value) {
-        runtime_value_t value = evaluate_expr(context, *arg_value);
+        struct runtime_value value = evaluate_expr(context, *arg_value);
         cvector_push_back(evaluated_arguments, value);
     }
 
     // Inject arguments values into stack frame
     for (size_t i = 0; i < cvector_size(evaluated_arguments); i++) {
-        runtime_value_t value = evaluated_arguments[i];
+        struct runtime_value value = evaluated_arguments[i];
         if (value.type == RUNTIME_TYPE_STRING) {
             (*value.value.string.reference_count)++;
         }
-        runtime_variable_t variable = {
+        struct runtime_variable variable = {
                 .name = xstrdup(fn->op.function_declaration.arguments[i]),
                 .is_constant = false,
                 .content = value,
@@ -684,7 +684,7 @@ runtime_value_t evaluate_function_call(context_t* context, const char* fn_name, 
     return return_value;
 }
 
-runtime_type_t string_to_runtime_type(const char* str) {
+enum runtime_type string_to_runtime_type(const char* str) {
 #define CHAD_INTERPRETER_RUNTIME_TYPE(A, B) \
     if (strcmp(str, #B) == 0) {             \
         return RUNTIME_TYPE_##A;            \
@@ -693,7 +693,7 @@ runtime_type_t string_to_runtime_type(const char* str) {
     return -1;
 }
 
-const char* runtime_type_to_string(runtime_type_t type) {
+const char* runtime_type_to_string(enum runtime_type type) {
     switch (type) {
 #define CHAD_INTERPRETER_RUNTIME_TYPE(A, B) \
     case RUNTIME_TYPE_##A:                  \

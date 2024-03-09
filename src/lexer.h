@@ -5,13 +5,13 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-typedef enum {
+enum token_type {
 #define CHAD_INTERPRETER_TOKEN(X) TOKEN_##X,
 #include "tokens.h"
-} token_type_t;
+};
 
-typedef struct {
-    token_type_t type;
+struct token {
+    enum token_type type;
     int line_nb;
     union {
         char* str;
@@ -19,12 +19,12 @@ typedef struct {
         bool boolean;
         double floating;
     } value;
-} token_t;
+};
 
-cvector_vector_type(token_t) tokenize(const char* input);
+cvector_vector_type(struct token) tokenize(const char* input);
 
-void print_tokens(cvector_vector_type(token_t) tokens);
-const char* token_type_to_string(token_type_t type);
+void print_tokens(cvector_vector_type(struct token) tokens);
+const char* token_type_to_string(enum token_type type);
 
 void vector_token_deleter(void* element);
 

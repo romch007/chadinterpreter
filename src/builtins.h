@@ -10,6 +10,6 @@ typedef enum {
 } builtin_fn_t;
 
 builtin_fn_t is_builtin_fn(const char* fn_name);
-runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvector_vector_type(expr_t*) arguments);
+struct runtime_value execute_builtin(struct context* context, builtin_fn_t fn_type, cvector_vector_type(struct expr*) arguments);
 
 #endif

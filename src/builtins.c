@@ -17,12 +17,12 @@ builtin_fn_t is_builtin_fn(const char* fn_name) {
     return -1;
 }
 
-runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvector_vector_type(expr_t*) arguments) {
+struct runtime_value execute_builtin(struct context* context, builtin_fn_t fn_type, cvector_vector_type(struct expr*) arguments) {
     switch (fn_type) {
         case BUILTIN_FN_PRINT: {
-            expr_t** arg;
+            struct expr** arg;
             for (arg = cvector_begin(arguments); arg != cvector_end(arguments); ++arg) {
-                runtime_value_t value = evaluate_expr(context, *arg);
+                struct runtime_value value = evaluate_expr(context, *arg);
                 print_value(&value);
                 printf(" ");
 
@@ -30,7 +30,7 @@ runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvecto
             }
             printf("\n");
 
-            runtime_value_t return_value = { .type = RUNTIME_TYPE_NULL };
+            struct runtime_value return_value = { .type = RUNTIME_TYPE_NULL };
 
             return return_value;
         }
@@ -39,10 +39,10 @@ runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvecto
                 panic("ERROR: 'type' function requires one argument\n");
             }
 
-            expr_t* arg = arguments[0];
-            runtime_value_t value = evaluate_expr(context, arg);
+            struct expr* arg = arguments[0];
+            struct runtime_value value = evaluate_expr(context, arg);
 
-            runtime_value_t type_string = {
+            struct runtime_value type_string = {
                     .type = RUNTIME_TYPE_STRING,
             };
 
@@ -53,7 +53,7 @@ runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvecto
             return type_string;
         }
         case BUILTIN_FN_INPUT: {
-            runtime_value_t ps1_value;
+            struct runtime_value ps1_value;
             bool has_ps1 = false;
 
             if (cvector_size(arguments) > 1) {
@@ -84,7 +84,7 @@ runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvecto
             // Remove newline
             buffer[read - 1] = '\0';
 
-            runtime_value_t result = {
+            struct runtime_value result = {
                     .type = RUNTIME_TYPE_STRING,
             };
 
@@ -100,7 +100,7 @@ runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvecto
                 panic("ERROR: 'len' function requires one argument\n");
             }
 
-            runtime_value_t input_value = evaluate_expr(context, arguments[0]);
+            struct runtime_value input_value = evaluate_expr(context, arguments[0]);
 
             if (input_value.type != RUNTIME_TYPE_STRING) {
                 panic("ERROR: cannot use 'len' on type %s\n", runtime_type_to_string(input_value.type));
@@ -108,7 +108,7 @@ runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvecto
 
             long len = (long)strlen(input_value.value.string.data);
 
-            runtime_value_t len_value = {
+            struct runtime_value len_value = {
                     .type = RUNTIME_TYPE_INTEGER,
                     .value.integer = len,
             };
@@ -122,13 +122,13 @@ runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvecto
                 panic("ERROR: 'len' function requires two argument\n");
             }
 
-            runtime_value_t target_value = evaluate_expr(context, arguments[0]);
+            struct runtime_value target_value = evaluate_expr(context, arguments[0]);
 
             if (target_value.type != RUNTIME_TYPE_STRING) {
                 panic("ERROR: cannot use 'at' on type %s\n", runtime_type_to_string(target_value.type));
             }
 
-            runtime_value_t index_value = evaluate_expr(context, arguments[1]);
+            struct runtime_value index_value = evaluate_expr(context, arguments[1]);
 
             if (index_value.type != RUNTIME_TYPE_INTEGER) {
                 panic("ERROR: type %s cannot be use as an index\n", runtime_type_to_string(target_value.type));
@@ -145,7 +145,7 @@ runtime_value_t execute_builtin(context_t* context, builtin_fn_t fn_type, cvecto
             chr[0] = origin[index];
             chr[1] = '\0';
 
-            runtime_value_t result = {
+            struct runtime_value result = {
                     .type = RUNTIME_TYPE_STRING,
             };
 

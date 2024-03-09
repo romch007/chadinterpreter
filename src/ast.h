@@ -4,7 +4,7 @@
 #include "cvector.h"
 #include <stdbool.h>
 
-typedef enum {
+enum expr_type {
     EXPR_BINARY_OPT,
     EXPR_UNARY_OPT,
     EXPR_BOOL_LITERAL,
@@ -14,48 +14,48 @@ typedef enum {
     EXPR_NULL,
     EXPR_VARIABLE_USE,
     EXPR_FUNCTION_CALL,
-} expr_type_t;
+};
 
-typedef enum {
+enum binary_op_type {
 #define CHAD_INTERPRETER_BINARY_OP(X, Y) BINARY_OP_##X,
 #include "binary_ops.h"
-} binary_op_type_t;
+};
 
-inline bool is_arithmetic_binary_op(binary_op_type_t type) {
+inline bool is_arithmetic_binary_op(enum binary_op_type type) {
     return type == BINARY_OP_ADD || type == BINARY_OP_SUB || type == BINARY_OP_MUL || type == BINARY_OP_DIV || type == BINARY_OP_MODULO;
 }
 
-inline bool is_logical_binary_op(binary_op_type_t type) {
+inline bool is_logical_binary_op(enum binary_op_type type) {
     return type == BINARY_OP_AND || type == BINARY_OP_OR;
 }
 
-inline bool is_comparison_binary_op(binary_op_type_t type) {
+inline bool is_comparison_binary_op(enum binary_op_type type) {
     return !is_arithmetic_binary_op(type) && !is_logical_binary_op(type);
 }
 
-const char* binary_op_to_symbol(binary_op_type_t op_type);
+const char* binary_op_to_symbol(enum binary_op_type op_type);
 
-typedef enum {
+enum unary_op_type {
 #define CHAD_INTERPRETER_UNARY_OP(X, Y) UNARY_OP_##X,
 #include "unary_ops.h"
-} unary_op_type_t;
+};
 
-const char* unary_op_to_symbol(unary_op_type_t op_type);
+const char* unary_op_to_symbol(enum unary_op_type op_type);
 
-typedef struct expr {
-    expr_type_t type;
+struct expr {
+    enum expr_type type;
     union {
         long integer_literal;
         char* string_literal;
         bool bool_literal;
         double float_literal;
         struct {
-            binary_op_type_t type;
+            enum binary_op_type type;
             struct expr* lhs;
             struct expr* rhs;
         } binary;
         struct {
-            unary_op_type_t type;
+            enum unary_op_type type;
             struct expr* arg;
         } unary;
         struct {
@@ -66,23 +66,23 @@ typedef struct expr {
             cvector_vector_type(struct expr*) arguments;
         } function_call;
     } op;
-} expr_t;
+};
 
-expr_t* make_binary_op(binary_op_type_t type, expr_t* lhs, expr_t* rhs);
-expr_t* make_unary_op(unary_op_type_t type, expr_t* arg);
-expr_t* make_bool_literal(bool value);
-expr_t* make_integer_literal(long value);
-expr_t* make_float_literal(double value);
-expr_t* make_string_literal(const char* value);
-expr_t* make_null();
-expr_t* make_variable_use(const char* name);
-expr_t* make_function_call(const char* name);
+struct expr* make_binary_op(enum binary_op_type type, struct expr* lhs, struct expr* rhs);
+struct expr* make_unary_op(enum unary_op_type type, struct expr* arg);
+struct expr* make_bool_literal(bool value);
+struct expr* make_integer_literal(long value);
+struct expr* make_float_literal(double value);
+struct expr* make_string_literal(const char* value);
+struct expr* make_null();
+struct expr* make_variable_use(const char* name);
+struct expr* make_function_call(const char* name);
 
-void dump_expr(expr_t* expr, int indent);
+void dump_expr(struct expr* expr, int indent);
 
-void destroy_expr(expr_t* expr);
+void destroy_expr(struct expr* expr);
 
-typedef enum {
+enum statement_type {
     STATEMENT_BLOCK,
     STATEMENT_IF_CONDITION,
     STATEMENT_VARIABLE_DECL,
@@ -94,23 +94,23 @@ typedef enum {
     STATEMENT_BREAK,
     STATEMENT_CONTINUE,
     STATEMENT_RETURN,
-} statement_type_t;
+};
 
-typedef struct statement {
-    statement_type_t type;
+struct statement {
+    enum statement_type type;
     union {
         struct {
             cvector_vector_type(struct statement*) statements;
         } block;
         struct {
-            expr_t* condition;
+            struct expr* condition;
             struct statement* body;
             struct statement* body_else;
         } if_condition;
         struct {
             bool is_constant;
             char* variable_name;
-            expr_t* value;
+            struct expr* value;
         } variable_declaration;
         struct {
             char* fn_name;
@@ -119,41 +119,41 @@ typedef struct statement {
         } function_declaration;
         struct {
             char* variable_name;
-            expr_t* value;
+            struct expr* value;
         } variable_assignment;
         struct {
-            expr_t* function_call;
+            struct expr* function_call;
         } naked_fn_call;
         struct {
-            expr_t* condition;
+            struct expr* condition;
             struct statement* body;
         } while_loop;
         struct {
             struct statement* initializer;
-            expr_t* condition;
+            struct expr* condition;
             struct statement* increment;
             struct statement* body;
         } for_loop;
         struct {
-            expr_t* value;
+            struct expr* value;
         } return_statement;
     } op;
-} statement_t;
+};
 
-statement_t* make_block_statement();
-statement_t* make_if_condition_statement(expr_t* condition, statement_t* body);
-statement_t* make_variable_declaration(bool constant, const char* variable_name);
-statement_t* make_function_declaration(const char* fn_name);
-statement_t* make_variable_assignment(const char* variable_name, expr_t* value);
-statement_t* make_naked_fn_call(expr_t* function_call);
-statement_t* make_while_loop(expr_t* condition, statement_t* body);
-statement_t* make_for_loop(statement_t* initializer, expr_t* condition, statement_t* increment, statement_t* body);
-statement_t* make_break_statement();
-statement_t* make_continue_statement();
-statement_t* make_return_statement();
+struct statement* make_block_statement();
+struct statement* make_if_condition_statement(struct expr* condition, struct statement* body);
+struct statement* make_variable_declaration(bool constant, const char* variable_name);
+struct statement* make_function_declaration(const char* fn_name);
+struct statement* make_variable_assignment(const char* variable_name, struct expr* value);
+struct statement* make_naked_fn_call(struct expr* function_call);
+struct statement* make_while_loop(struct expr* condition, struct statement* body);
+struct statement* make_for_loop(struct statement* initializer, struct expr* condition, struct statement* increment, struct statement* body);
+struct statement* make_break_statement();
+struct statement* make_continue_statement();
+struct statement* make_return_statement();
 
-void dump_statement(statement_t* statement, int indent);
+void dump_statement(struct statement* statement, int indent);
 
-void destroy_statement(statement_t* statement);
+void destroy_statement(struct statement* statement);
 
 #endif
