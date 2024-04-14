@@ -8,15 +8,18 @@
 #include "getopt_impl.h"
 #endif
 
-#define STB_DS_IMPLEMENTATION
 
 #include "interpreter.h"
 #include "lexer.h"
 #include "mem.h"
 #include "parser.h"
+#include "errors.h"
+
+#define STBDS_REALLOC(context,ptr,size) xrealloc(ptr, size)
+#define STBDS_FREE(context,ptr)         free(ptr)
+#define STB_DS_IMPLEMENTATION
 #include "stb_ds.h"
 #include "stb_extra.h"
-#include "errors.h"
 
 static char* read_file_content(char* filename) {
     FILE* file = fopen(filename, "rb");
@@ -84,8 +87,9 @@ int main(int argc, char** argv) {
     // print_tokens(tokens);
 
     // Parsing
-    struct parser* parser = create_parser(tokens);
-    struct statement* root = parse_block(parser);
+    struct parser parser;
+    init_parser(&parser, tokens);
+    struct statement* root = parse_block(&parser);
 
     FOR_EACH(struct token, token, tokens) {
         if (token->type == TOKEN_IDENTIFIER || token->type == TOKEN_STR_LITERAL) {
@@ -101,15 +105,15 @@ int main(int argc, char** argv) {
     }
 
     // Runtime
-    struct context* context = create_context();
+    struct context context;
+    init_context(&context);
 
-    push_stack_frame(context);
-    execute_statement(context, root);
-    pop_stack_frame(context);
+    push_stack_frame(&context);
+    execute_statement(&context, root);
+    pop_stack_frame(&context);
 
     destroy_statement(root);
-    destroy_context(context);
-    free(parser);
+    destroy_context(&context);
 
     return 0;
 }

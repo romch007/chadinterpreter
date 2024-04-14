@@ -6,11 +6,10 @@
 
 struct parser {
     struct token* tokens;
-    size_t token_count;
     size_t token_index;
 };
 
-struct parser* create_parser(struct token* tokens);
+void init_parser(struct parser* parser, struct token* tokens);
 
 struct statement* parse_statement(struct parser* parser);
 struct statement* parse_block(struct parser* parser);

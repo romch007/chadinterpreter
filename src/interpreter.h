@@ -45,7 +45,7 @@ struct context {
     int recursion_depth;
 };
 
-struct context* create_context();
+void init_context(struct context* context);
 void destroy_context(struct context* context);
 
 void push_stack_frame(struct context* context);

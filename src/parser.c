@@ -4,7 +4,6 @@
 #include "errors.h"
 #include "mem.h"
 #include "stb_ds.h"
-#include "stb_extra.h"
 
 static void consume(struct parser* parser, size_t count) {
     parser->token_index += count;
@@ -29,12 +28,9 @@ static struct token* expect(struct parser* parser, struct token* token, enum tok
     return token;
 }
 
-struct parser* create_parser(struct token* tokens) {
-  struct parser* parser = xmalloc(sizeof(struct parser));
+void init_parser(struct parser* parser, struct token* tokens) {
   parser->token_index = 0;
   parser->tokens = tokens;
-  parser->token_count = arrlen(tokens);
-  return parser;
 }
 
 struct statement* parse_statement(struct parser* parser) {

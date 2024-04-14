@@ -3,4 +3,6 @@
 
 #define FOR_EACH(type, var, arr) for (type* var = arr; var <= arr + arrlen(arr) - 1; var++)
 
+#define REVERSE_FOR_EACH(type, var, arr) for (type* var = arr + arrlen(arr); var-- != arr;)
+
 #endif

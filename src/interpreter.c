@@ -29,14 +29,12 @@ static uint64_t function_hash(const void* item, uint64_t seed0, uint64_t seed1) 
     return hashmap_xxhash3((*f)->op.function_declaration.fn_name, strlen((*f)->op.function_declaration.fn_name), seed0, seed1);
 }
 
-struct context* create_context() {
-    struct context* context = xmalloc(sizeof(struct context));
+void init_context(struct context* context) {
     context->frames = NULL;
     context->should_break_loop = false;
     context->should_continue_loop = false;
     context->should_return_fn = false;
     context->recursion_depth = 0;
-    return context;
 }
 
 static struct stack_frame* get_current_stack_frame(struct context* context) {
@@ -94,7 +92,6 @@ void destroy_context(struct context* context) {
         pop_stack_frame(context);
     }
     arrfree(context->frames);
-    free(context);
 }
 
 void push_stack_frame(struct context* context) {
@@ -280,7 +277,7 @@ void execute_variable_declaration(struct context* context, struct statement* sta
 
     if (old_variable != NULL && old_variable->is_constant == true) {
         panic("ERROR: declaration of '%s' is shadowing a constant variable\n", variable_name);
-}
+    }
 
     struct runtime_variable variable = {
             .name = xstrdup(variable_name),
@@ -306,7 +303,7 @@ void execute_variable_declaration(struct context* context, struct statement* sta
 const struct runtime_variable* get_variable(struct context* context, const char* variable_name, int* stack_index) {
     int i = arrlen(context->frames) - 1;
 
-    FOR_EACH(struct stack_frame, it, context->frames) {
+    REVERSE_FOR_EACH(struct stack_frame, it, context->frames) {
         const struct runtime_variable* variable = (const struct runtime_variable*) hashmap_get(it->variables, &(struct runtime_variable){.name = (char*) variable_name});
 
         if (variable != NULL) {
@@ -323,7 +320,7 @@ const struct runtime_variable* get_variable(struct context* context, const char*
 const struct statement* get_function(struct context* context, const char* fn_name, int* stack_index) {
     int i = arrlen(context->frames) - 1;
 
-    FOR_EACH(struct stack_frame, it, context->frames) {
+    REVERSE_FOR_EACH(struct stack_frame, it, context->frames) {
         struct statement search_term = {.type = STATEMENT_FUNCTION_DECL, .op.function_declaration.fn_name = (char*) fn_name};
         struct statement* search_term_ptr = &search_term;
         const struct statement** fn = (const struct statement**) hashmap_get(it->functions, &search_term_ptr);
