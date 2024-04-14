@@ -60,9 +60,6 @@ void destroy_context(struct context* context);
 void push_stack_frame(struct context* context);
 void pop_stack_frame(struct context* context);
 
-void dump_context(struct context* context);
-void dump_stack_frame(struct stack_frame* frame);
-
 void print_value(const struct runtime_value* value);
 void destroy_value(const struct runtime_value* value);
 

@@ -17,22 +17,6 @@ static struct stack_frame* get_current_stack_frame(struct context* context) {
     return context->frames + arrlen(context->frames) - 1;
 }
 
-void dump_context(struct context* context) {
-    printf("--- variables ---\n");
-    FOR_EACH(struct stack_frame, it, context->frames) {
-        dump_stack_frame(it);
-    }
-}
-
-
-void dump_stack_frame(struct stack_frame* frame) {
-    for (size_t i = 0; i < shlen(frame->variables); i++) {
-        const struct runtime_variable_entry entry = frame->variables[i];
-        printf("%s: %s = ", entry.key, runtime_type_to_string(entry.value.content.type));
-        print_value(&entry.value.content);
-    }
-}
-
 void print_value(const struct runtime_value* value) {
     switch (value->type) {
         case RUNTIME_TYPE_STRING:
@@ -92,7 +76,7 @@ void pop_stack_frame(struct context* context) {
     shfree(frame->variables);
     // Functions are freed during AST destruction
     shfree(frame->functions);
-    arrpop(context->frames);
+    (void)arrpop(context->frames);
 }
 
 void execute_statement(struct context* context, struct statement* statement) {
