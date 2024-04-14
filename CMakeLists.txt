@@ -22,7 +22,8 @@ include(CheckSymbolExists)
 add_library(chadinterpreter
         src/ast.c
         src/ast.h
-        src/cvector.h
+        src/stb_ds.h
+        src/stb_extra.h
         src/hashmap.c
         src/hashmap.h
         src/interpreter.c

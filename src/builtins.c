@@ -1,5 +1,3 @@
-#include "builtins.h"
-#include "errors.h"
 #include <errno.h>
 
 #ifdef HAVE_GETLINE
@@ -7,6 +5,11 @@
 #else
 #include "getline_impl.h"
 #endif
+
+#include "builtins.h"
+#include "errors.h"
+#include "stb_ds.h"
+#include "stb_extra.h"
 
 builtin_fn_t is_builtin_fn(const char* fn_name) {
 #define CHAD_INTERPRETER_BUILTIN_FN(A, B) \
@@ -20,8 +23,7 @@ builtin_fn_t is_builtin_fn(const char* fn_name) {
 struct runtime_value execute_builtin(struct context* context, builtin_fn_t fn_type, struct expr** arguments) {
     switch (fn_type) {
         case BUILTIN_FN_PRINT: {
-            struct expr** arg;
-            for (arg = cvector_begin(arguments); arg != cvector_end(arguments); ++arg) {
+            FOR_EACH(struct expr*, arg, arguments) {
                 struct runtime_value value = evaluate_expr(context, *arg);
                 print_value(&value);
                 printf(" ");
@@ -35,7 +37,7 @@ struct runtime_value execute_builtin(struct context* context, builtin_fn_t fn_ty
             return return_value;
         }
         case BUILTIN_FN_TYPE: {
-            if (cvector_size(arguments) != 1) {
+            if (arrlen(arguments) != 1) {
                 panic("ERROR: 'type' function requires one argument\n");
             }
 
@@ -56,11 +58,11 @@ struct runtime_value execute_builtin(struct context* context, builtin_fn_t fn_ty
             struct runtime_value ps1_value;
             bool has_ps1 = false;
 
-            if (cvector_size(arguments) > 1) {
+            if (arrlen(arguments) > 1) {
                 panic("ERROR: 'input' function requires zero or one argument(s)\n");
             }
 
-            if (cvector_size(arguments) == 1) {
+            if (arrlen(arguments) == 1) {
                 has_ps1 = true;
                 ps1_value = evaluate_expr(context, arguments[0]);
 
@@ -96,7 +98,7 @@ struct runtime_value execute_builtin(struct context* context, builtin_fn_t fn_ty
             return result;
         }
         case BUILTIN_FN_LEN: {
-            if (cvector_size(arguments) != 1) {
+            if (arrlen(arguments) != 1) {
                 panic("ERROR: 'len' function requires one argument\n");
             }
 
@@ -118,7 +120,7 @@ struct runtime_value execute_builtin(struct context* context, builtin_fn_t fn_ty
             return len_value;
         }
         case BUILTIN_FN_AT: {
-            if (cvector_size(arguments) != 2) {
+            if (arrlen(arguments) != 2) {
                 panic("ERROR: 'len' function requires two argument\n");
             }
 

@@ -1,7 +1,6 @@
 #ifndef CHAD_INTERPRETER_LEXER_H
 #define CHAD_INTERPRETER_LEXER_H
 
-#include "cvector.h"
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -25,7 +24,5 @@ struct token* tokenize(const char* input);
 
 void print_tokens(struct token* tokens);
 const char* token_type_to_string(enum token_type type);
-
-void vector_token_deleter(void* element);
 
 #endif

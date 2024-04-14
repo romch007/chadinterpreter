@@ -1,23 +1,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "stb_ds.h"
+#include "stb_extra.h"
 #include "ast.h"
 #include "mem.h"
-
-static void string_deleter(void* element) {
-    char* str = *(void**) element;
-    free(str);
-}
-
-static void vector_statement_deleter(void* element) {
-    struct statement* statement = *(void**) element;
-    destroy_statement(statement);
-}
-
-static void vector_expr_deleter(void* element) {
-    struct expr* expr = *(void**) element;
-    destroy_expr(expr);
-}
 
 static int indent_offset = 2;
 
@@ -162,8 +149,7 @@ void dump_expr(struct expr* expr, int indent) {
             print_indent(indent + indent_offset);
             fprintf(stderr, "Identifier %s\n", expr->op.function_call.name);
             if (expr->op.function_call.arguments != NULL) {
-                struct expr** arg;
-                for (arg = cvector_begin(expr->op.function_call.arguments); arg != cvector_end(expr->op.function_call.arguments); ++arg) {
+                FOR_EACH(struct expr*, arg, expr->op.function_call.arguments) {
                     dump_expr(*arg, indent + indent_offset);
                 }
             }
@@ -190,8 +176,10 @@ void destroy_expr(struct expr* expr) {
             break;
         case EXPR_FUNCTION_CALL:
             free(expr->op.function_call.name);
-            cvector_set_elem_destructor(expr->op.function_call.arguments, vector_expr_deleter);
-            cvector_free(expr->op.function_call.arguments);
+            FOR_EACH(struct expr*, arg, expr->op.function_call.arguments) {
+                destroy_expr(*arg);
+            }
+            arrfree(expr->op.function_call.arguments);
             break;
         default:
             break;
@@ -292,8 +280,7 @@ void dump_statement(struct statement* statement, int indent) {
         case STATEMENT_BLOCK: {
             print_indent(indent);
             fprintf(stderr, "(Block)\n");
-            struct statement** it;
-            for (it = cvector_begin(statement->op.block.statements); it != cvector_end(statement->op.block.statements); ++it) {
+            FOR_EACH(struct statement*, it, statement->op.block.statements) {
                 dump_statement(*it, indent + indent_offset);
             }
             break;
@@ -329,8 +316,7 @@ void dump_statement(struct statement* statement, int indent) {
             if (statement->op.function_declaration.arguments != NULL) {
                 print_indent(indent + indent_offset);
                 fprintf(stderr, "Arguments ");
-                char** arg_name;
-                for (arg_name = cvector_begin(statement->op.function_declaration.arguments); arg_name != cvector_end(statement->op.function_declaration.arguments); ++arg_name) {
+                FOR_EACH(char*, arg_name, statement->op.function_declaration.arguments) {
                     fprintf(stderr, "%s ", *arg_name);
                 }
                 fprintf(stderr, "\n");
@@ -387,8 +373,10 @@ void destroy_statement(struct statement* statement) {
 
     switch (statement->type) {
         case STATEMENT_BLOCK:
-            cvector_set_elem_destructor(statement->op.block.statements, vector_statement_deleter);
-            cvector_free(statement->op.block.statements);
+            FOR_EACH(struct statement*, it, statement->op.block.statements) {
+                destroy_statement(*it);
+            }
+            arrfree(statement->op.block.statements);
             break;
         case STATEMENT_VARIABLE_DECL:
             free(statement->op.variable_declaration.variable_name);
@@ -397,8 +385,10 @@ void destroy_statement(struct statement* statement) {
         case STATEMENT_FUNCTION_DECL:
             free(statement->op.function_declaration.fn_name);
             destroy_statement(statement->op.function_declaration.body);
-            cvector_set_elem_destructor(statement->op.function_declaration.arguments, string_deleter);
-            cvector_free(statement->op.function_declaration.arguments);
+            FOR_EACH(char*, arg, statement->op.function_declaration.arguments) {
+                free(*arg);
+            }
+            arrfree(statement->op.function_declaration.arguments);
             break;
         case STATEMENT_IF_CONDITION:
             destroy_expr(statement->op.if_condition.condition);

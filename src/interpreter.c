@@ -2,6 +2,8 @@
 #include "builtins.h"
 #include "errors.h"
 #include "mem.h"
+#include "stb_ds.h"
+#include "stb_extra.h"
 
 static int variable_compare(const void* a, const void* b, void* udata) {
     const struct runtime_variable* va = a;
@@ -38,13 +40,12 @@ struct context* create_context() {
 }
 
 static struct stack_frame* get_current_stack_frame(struct context* context) {
-    return cvector_end(context->frames) - 1;
+    return context->frames + arrlen(context->frames) - 1;
 }
 
 void dump_context(struct context* context) {
     printf("--- variables ---\n");
-    struct stack_frame* it;
-    for (it = cvector_begin(context->frames); it != cvector_end(context->frames); it++) {
+    FOR_EACH(struct stack_frame, it, context->frames) {
         dump_stack_frame(it);
     }
 }
@@ -89,10 +90,10 @@ void destroy_value(const struct runtime_value* value) {
 }
 
 void destroy_context(struct context* context) {
-    for (int i = 0; i < cvector_size(context->frames); i++) {
+    for (int i = 0; i < arrlen(context->frames); i++) {
         pop_stack_frame(context);
     }
-    cvector_free(context->frames);
+    arrfree(context->frames);
     free(context);
 }
 
@@ -102,7 +103,7 @@ void push_stack_frame(struct context* context) {
             .functions = hashmap_new(sizeof(struct statement*), 0, 0, 0, function_hash, function_compare, NULL, NULL),
     };
 
-    cvector_push_back(context->frames, frame);
+    arrpush(context->frames, frame);
 }
 
 void pop_stack_frame(struct context* context) {
@@ -123,23 +124,18 @@ void pop_stack_frame(struct context* context) {
     hashmap_free(frame->variables);
     // Functions are freed during AST destruction
     hashmap_free(frame->functions);
-    cvector_pop_back(context->frames);
+    arrpop(context->frames);
 }
 
 void execute_statement(struct context* context, struct statement* statement) {
     switch (statement->type) {
         case STATEMENT_BLOCK: {
-            struct statement** statements = statement->op.block.statements;
-
-            struct statement** it;
-            for (it = cvector_begin(statements); it != cvector_end(statements); ++it) {
-                struct statement* current_statement = *it;
-                execute_statement(context, current_statement);
+            FOR_EACH(struct statement*, it, statement->op.block.statements) {
+                execute_statement(context, *it);
 
                 if (context->should_break_loop || context->should_continue_loop || context->should_return_fn)
                     break;
             }
-
             break;
         }
         case STATEMENT_VARIABLE_DECL: {
@@ -308,9 +304,9 @@ void execute_variable_declaration(struct context* context, struct statement* sta
 }
 
 const struct runtime_variable* get_variable(struct context* context, const char* variable_name, int* stack_index) {
-    struct stack_frame* it;
-    int i = cvector_size(context->frames) - 1;
-    for (it = cvector_end(context->frames); it-- != cvector_begin(context->frames);) {
+    int i = arrlen(context->frames) - 1;
+
+    FOR_EACH(struct stack_frame, it, context->frames) {
         const struct runtime_variable* variable = (const struct runtime_variable*) hashmap_get(it->variables, &(struct runtime_variable){.name = (char*) variable_name});
 
         if (variable != NULL) {
@@ -325,9 +321,9 @@ const struct runtime_variable* get_variable(struct context* context, const char*
 }
 
 const struct statement* get_function(struct context* context, const char* fn_name, int* stack_index) {
-    struct stack_frame* it;
-    int i = cvector_size(context->frames) - 1;
-    for (it = cvector_end(context->frames); it-- != cvector_begin(context->frames);) {
+    int i = arrlen(context->frames) - 1;
+
+    FOR_EACH(struct stack_frame, it, context->frames) {
         struct statement search_term = {.type = STATEMENT_FUNCTION_DECL, .op.function_declaration.fn_name = (char*) fn_name};
         struct statement* search_term_ptr = &search_term;
         const struct statement** fn = (const struct statement**) hashmap_get(it->functions, &search_term_ptr);
@@ -628,8 +624,8 @@ struct runtime_value evaluate_function_call(struct context* context, const char*
         panic("ERROR: cannot find function %s\n", fn_name);
     }
 
-    size_t fn_decl_argument_size = cvector_size(fn->op.function_declaration.arguments);
-    size_t fn_call_argument_size = cvector_size(arguments);
+    size_t fn_decl_argument_size = arrlen(fn->op.function_declaration.arguments);
+    size_t fn_call_argument_size = arrlen(arguments);
 
     if (fn_decl_argument_size != fn_call_argument_size) {
         panic("ERROR: '%s' expects %zu arguments, but %zu were given\n", fn_name, fn_decl_argument_size, fn_call_argument_size);
@@ -639,15 +635,15 @@ struct runtime_value evaluate_function_call(struct context* context, const char*
 
     // Evaluate arguments
     struct runtime_value* evaluated_arguments = NULL;
-    cvector_init(evaluated_arguments, cvector_size(arguments), NULL);
-    struct expr** arg_value;
-    for (arg_value = cvector_begin(arguments); arg_value != cvector_end(arguments); ++arg_value) {
+    arrsetcap(evaluated_arguments, fn_call_argument_size);
+
+    FOR_EACH(struct expr*, arg_value, arguments)  {
         struct runtime_value value = evaluate_expr(context, *arg_value);
-        cvector_push_back(evaluated_arguments, value);
+        arrpush(evaluated_arguments, value);
     }
 
     // Inject arguments values into stack frame
-    for (size_t i = 0; i < cvector_size(evaluated_arguments); i++) {
+    for (size_t i = 0; i < arrlen(evaluated_arguments); i++) {
         struct runtime_value value = evaluated_arguments[i];
         if (value.type == RUNTIME_TYPE_STRING) {
             (*value.value.string.reference_count)++;
@@ -660,7 +656,7 @@ struct runtime_value evaluate_function_call(struct context* context, const char*
         hashmap_set(get_current_stack_frame(context)->variables, &variable);
     }
 
-    cvector_free(evaluated_arguments);
+    arrfree(evaluated_arguments);
 
     context->recursion_depth++;
 

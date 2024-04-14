@@ -1,6 +1,10 @@
-#include "parser.h"
 #include <stdio.h>
+
+#include "parser.h"
 #include "errors.h"
+#include "mem.h"
+#include "stb_ds.h"
+#include "stb_extra.h"
 
 static void consume(struct parser* parser, size_t count) {
     parser->token_index += count;
@@ -29,7 +33,7 @@ struct parser* create_parser(struct token* tokens) {
   struct parser* parser = xmalloc(sizeof(struct parser));
   parser->token_index = 0;
   parser->tokens = tokens;
-  parser->token_count = cvector_size(tokens);
+  parser->token_count = arrlen(tokens);
   return parser;
 }
 
@@ -98,7 +102,7 @@ struct statement* parse_block(struct parser* parser) {
 
         if (statement == NULL) break;
 
-        cvector_push_back(root->op.block.statements, statement);
+        arrpush(root->op.block.statements, statement);
     }
 
     return root;
@@ -162,7 +166,7 @@ struct statement* parse_function_declaration(struct parser* parser) {
     if (peek(parser, 0)->type == TOKEN_IDENTIFIER) {
         for (;;) {
             struct token* ident_arg_name = expect(parser, advance(parser), TOKEN_IDENTIFIER);
-            cvector_push_back(fn_decl->op.function_declaration.arguments, xstrdup(ident_arg_name->value.str));
+            arrpush(fn_decl->op.function_declaration.arguments, xstrdup(ident_arg_name->value.str));
 
             if (peek(parser, 0)->type == TOKEN_COMMA) {
                 consume(parser, 1);
@@ -407,7 +411,7 @@ struct expr* parse_function_call(struct parser* parser) {
 
     while (peek(parser, 0)->type != TOKEN_CLOSE_PAREN) {
         struct expr* argument = parse_expression(parser);
-        cvector_push_back(function_call->op.function_call.arguments, argument);
+        arrpush(function_call->op.function_call.arguments, argument);
 
         if (peek(parser, 0)->type != TOKEN_COMMA)
             break;

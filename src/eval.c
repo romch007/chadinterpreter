@@ -1,12 +1,6 @@
-#include "hashmap.h"
-#include "interpreter.h"
-#include "lexer.h"
-#include "mem.h"
-#include "parser.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "errors.h"
 
 #ifdef HAVE_GETOPT
 #include <unistd.h>
@@ -14,6 +8,15 @@
 #include "getopt_impl.h"
 #endif
 
+#define STB_DS_IMPLEMENTATION
+
+#include "interpreter.h"
+#include "lexer.h"
+#include "mem.h"
+#include "parser.h"
+#include "stb_ds.h"
+#include "stb_extra.h"
+#include "errors.h"
 
 static char* read_file_content(char* filename) {
     FILE* file = fopen(filename, "rb");
@@ -84,8 +87,12 @@ int main(int argc, char** argv) {
     struct parser* parser = create_parser(tokens);
     struct statement* root = parse_block(parser);
 
-    cvector_set_elem_destructor(tokens, vector_token_deleter);
-    cvector_free(tokens);
+    FOR_EACH(struct token, token, tokens) {
+        if (token->type == TOKEN_IDENTIFIER || token->type == TOKEN_STR_LITERAL) {
+            free(token->value.str);
+        }
+    }
+    arrfree(tokens);
 
     if (should_print_ast) {
         fprintf(stderr, "--- AST dump ---\n");

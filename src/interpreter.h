@@ -1,10 +1,11 @@
 #ifndef CHAD_INTERPRETER_INTERPRETER_H
 #define CHAD_INTERPRETER_INTERPRETER_H
 
+#include <stdbool.h>
+
 #include "ast.h"
 #include "gc.h"
 #include "hashmap.h"
-#include <stdbool.h>
 
 static const int MAX_RECURSION_DEPTH = 1000;
 

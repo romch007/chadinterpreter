@@ -1,7 +1,6 @@
 #ifndef CHAD_INTERPRETER_AST_H
 #define CHAD_INTERPRETER_AST_H
 
-#include "cvector.h"
 #include <stdbool.h>
 
 enum expr_type {

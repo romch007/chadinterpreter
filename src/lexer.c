@@ -1,9 +1,12 @@
-#include "lexer.h"
-#include "mem.h"
 #include <ctype.h>
 #include <stdbool.h>
 #include <string.h>
+
+#include "lexer.h"
+#include "mem.h"
 #include "errors.h"
+#include "stb_ds.h"
+#include "stb_extra.h"
 
 static size_t current_pos = 0;
 static const char* s_input = NULL;
@@ -14,13 +17,6 @@ static char peek(int advance) {
         return s_input[current_pos + advance];
     } else {
         return '\0';
-    }
-}
-
-void vector_token_deleter(void* element) {
-    struct token* token = (struct token*) element;
-    if (token->type == TOKEN_IDENTIFIER || token->type == TOKEN_STR_LITERAL) {
-        free(token->value.str);
     }
 }
 
@@ -46,7 +42,7 @@ struct token* tokenize(const char* input) {
 
         if (c == '\0') {
             token.type = TOKEN_EOS;
-            cvector_push_back(tokens, token);
+            arrpush(tokens, token);
             break;
         }
 
@@ -244,7 +240,7 @@ struct token* tokenize(const char* input) {
         token.line_nb = current_line;
 
         if (!ignore)
-            cvector_push_back(tokens, token);
+            arrpush(tokens, token);
 
         current_pos++;
     }
@@ -263,7 +259,7 @@ const char* token_type_to_string(enum token_type type) {
 }
 
 void print_tokens(struct token* tokens) {
-    for (struct token* token = cvector_begin(tokens); token != cvector_end(tokens); ++token) {
+    FOR_EACH(struct token, token, tokens) {
         printf("%s", token_type_to_string(token->type));
         if (token->type == TOKEN_INT_LITERAL) {
             printf(" - %ld\n", token->value.integer);
