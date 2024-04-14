@@ -17,7 +17,7 @@ builtin_fn_t is_builtin_fn(const char* fn_name) {
     return -1;
 }
 
-struct runtime_value execute_builtin(struct context* context, builtin_fn_t fn_type, cvector_vector_type(struct expr*) arguments) {
+struct runtime_value execute_builtin(struct context* context, builtin_fn_t fn_type, struct expr** arguments) {
     switch (fn_type) {
         case BUILTIN_FN_PRINT: {
             struct expr** arg;

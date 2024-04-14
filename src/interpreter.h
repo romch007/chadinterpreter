@@ -35,7 +35,7 @@ struct stack_frame {
 };
 
 struct context {
-    cvector_vector_type(struct stack_frame) frames;
+    struct stack_frame* frames;
     bool should_break_loop;
     bool should_continue_loop;
     bool should_return_fn;
@@ -66,7 +66,7 @@ void execute_variable_assignment(struct context* context, struct statement* stat
 struct runtime_value evaluate_expr(struct context* context, struct expr* expr);
 struct runtime_value evaluate_binary_op(struct context*, enum binary_op_type op_type, struct expr* lhs, struct expr* rhs);
 struct runtime_value evaluate_unary_op(struct context*, enum unary_op_type op_type, struct expr* arg);
-struct runtime_value evaluate_function_call(struct context* context, const char* fn_name, cvector_vector_type(struct expr*) arguments);
+struct runtime_value evaluate_function_call(struct context* context, const char* fn_name, struct expr** arguments);
 
 enum runtime_type string_to_runtime_type(const char* str);
 const char* runtime_type_to_string(enum runtime_type type);

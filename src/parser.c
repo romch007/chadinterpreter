@@ -25,7 +25,7 @@ static struct token* expect(struct parser* parser, struct token* token, enum tok
     return token;
 }
 
-struct parser* create_parser(cvector_vector_type(struct token) tokens) {
+struct parser* create_parser(struct token* tokens) {
   struct parser* parser = xmalloc(sizeof(struct parser));
   parser->token_index = 0;
   parser->tokens = tokens;

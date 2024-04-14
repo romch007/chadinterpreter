@@ -32,11 +32,11 @@ static bool is_valid_identifier(char c) {
     return c == '_' || isalpha(c);
 }
 
-cvector_vector_type(struct token) tokenize(const char* input) {
+struct token* tokenize(const char* input) {
     current_pos = 0;
     s_input = input;
     input_len = strlen(input);
-    cvector_vector_type(struct token) tokens = NULL;
+    struct token* tokens = NULL;
     int current_line = 1;
 
     for (;;) {
@@ -262,7 +262,7 @@ const char* token_type_to_string(enum token_type type) {
     return NULL;
 }
 
-void print_tokens(cvector_vector_type(struct token) tokens) {
+void print_tokens(struct token* tokens) {
     for (struct token* token = cvector_begin(tokens); token != cvector_end(tokens); ++token) {
         printf("%s", token_type_to_string(token->type));
         if (token->type == TOKEN_INT_LITERAL) {

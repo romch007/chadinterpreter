@@ -129,7 +129,7 @@ void pop_stack_frame(struct context* context) {
 void execute_statement(struct context* context, struct statement* statement) {
     switch (statement->type) {
         case STATEMENT_BLOCK: {
-            cvector_vector_type(struct statement*) statements = statement->op.block.statements;
+            struct statement** statements = statement->op.block.statements;
 
             struct statement** it;
             for (it = cvector_begin(statements); it != cvector_end(statements); ++it) {
@@ -613,7 +613,7 @@ struct runtime_value evaluate_unary_op(struct context* context, enum unary_op_ty
     return result_value;
 }
 
-struct runtime_value evaluate_function_call(struct context* context, const char* fn_name, cvector_vector_type(struct expr*) arguments) {
+struct runtime_value evaluate_function_call(struct context* context, const char* fn_name, struct expr** arguments) {
     struct runtime_value return_value = {
             .type = RUNTIME_TYPE_NULL};
 
@@ -638,7 +638,7 @@ struct runtime_value evaluate_function_call(struct context* context, const char*
     push_stack_frame(context);
 
     // Evaluate arguments
-    cvector_vector_type(struct runtime_value) evaluated_arguments = NULL;
+    struct runtime_value* evaluated_arguments = NULL;
     cvector_init(evaluated_arguments, cvector_size(arguments), NULL);
     struct expr** arg_value;
     for (arg_value = cvector_begin(arguments); arg_value != cvector_end(arguments); ++arg_value) {

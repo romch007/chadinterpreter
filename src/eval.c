@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
     char* content = read_file_content(argv[optind]);
 
     // Lexing
-    cvector_vector_type(struct token) tokens = tokenize(content);
+    struct token* tokens = tokenize(content);
     free(content);
     // print_tokens(tokens);
 

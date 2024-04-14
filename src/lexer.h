@@ -21,9 +21,9 @@ struct token {
     } value;
 };
 
-cvector_vector_type(struct token) tokenize(const char* input);
+struct token* tokenize(const char* input);
 
-void print_tokens(cvector_vector_type(struct token) tokens);
+void print_tokens(struct token* tokens);
 const char* token_type_to_string(enum token_type type);
 
 void vector_token_deleter(void* element);

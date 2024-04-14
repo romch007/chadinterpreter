@@ -5,12 +5,12 @@
 #include "lexer.h"
 
 struct parser {
-    cvector_vector_type(struct token) tokens;
+    struct token* tokens;
     size_t token_count;
     size_t token_index;
 };
 
-struct parser* create_parser(cvector_vector_type(struct token) tokens);
+struct parser* create_parser(struct token* tokens);
 
 struct statement* parse_statement(struct parser* parser);
 struct statement* parse_block(struct parser* parser);

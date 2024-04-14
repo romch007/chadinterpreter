@@ -63,7 +63,7 @@ struct expr {
         } variable_use;
         struct {
             char* name;
-            cvector_vector_type(struct expr*) arguments;
+            struct expr** arguments;
         } function_call;
     } op;
 };
@@ -100,7 +100,7 @@ struct statement {
     enum statement_type type;
     union {
         struct {
-            cvector_vector_type(struct statement*) statements;
+            struct statement** statements;
         } block;
         struct {
             struct expr* condition;
@@ -114,7 +114,7 @@ struct statement {
         } variable_declaration;
         struct {
             char* fn_name;
-            cvector_vector_type(char*) arguments;
+            char** arguments;
             struct statement* body;
         } function_declaration;
         struct {
