@@ -8,7 +8,7 @@ struct ref_counted {
     void* data;
 };
 
-inline void init_ref_counted(struct ref_counted* rc, void* data) {
+static inline void init_ref_counted(struct ref_counted* rc, void* data) {
     rc->data = data;
     rc->reference_count = xmalloc(sizeof(int));
     *rc->reference_count = 0;

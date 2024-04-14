@@ -29,7 +29,6 @@ add_library(chadinterpreter
         src/interpreter.h
         src/lexer.c
         src/lexer.h
-        src/mem.c
         src/mem.h
         src/parser.c
         src/parser.h
@@ -38,7 +37,6 @@ add_library(chadinterpreter
         src/binary_ops.h
         src/unary_ops.h
         src/gc.h
-        src/gc.c
         src/builtins.h
         src/builtins.c
         src/getopt_impl.h

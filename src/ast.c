@@ -27,10 +27,6 @@ static void print_indent(int indent) {
     }
 }
 
-extern inline bool is_arithmetic_binary_op(enum binary_op_type type);
-extern inline bool is_logical_binary_op(enum binary_op_type type);
-extern inline bool is_comparison_binary_op(enum binary_op_type type);
-
 const char* binary_op_to_symbol(enum binary_op_type op_type) {
     switch (op_type) {
 #define CHAD_INTERPRETER_BINARY_OP(X, Y) \

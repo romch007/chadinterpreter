@@ -21,15 +21,15 @@ enum binary_op_type {
 #include "binary_ops.h"
 };
 
-inline bool is_arithmetic_binary_op(enum binary_op_type type) {
+static inline bool is_arithmetic_binary_op(enum binary_op_type type) {
     return type == BINARY_OP_ADD || type == BINARY_OP_SUB || type == BINARY_OP_MUL || type == BINARY_OP_DIV || type == BINARY_OP_MODULO;
 }
 
-inline bool is_logical_binary_op(enum binary_op_type type) {
+static inline bool is_logical_binary_op(enum binary_op_type type) {
     return type == BINARY_OP_AND || type == BINARY_OP_OR;
 }
 
-inline bool is_comparison_binary_op(enum binary_op_type type) {
+static inline bool is_comparison_binary_op(enum binary_op_type type) {
     return !is_arithmetic_binary_op(type) && !is_logical_binary_op(type);
 }
 
