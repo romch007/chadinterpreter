@@ -5,30 +5,6 @@
 #include "stb_ds.h"
 #include "stb_extra.h"
 
-static int variable_compare(const void* a, const void* b, void* udata) {
-    const struct runtime_variable* va = a;
-    const struct runtime_variable* vb = b;
-
-    return strcmp(va->name, vb->name);
-}
-
-static uint64_t variable_hash(const void* item, uint64_t seed0, uint64_t seed1) {
-    const struct runtime_variable* v = item;
-    return hashmap_xxhash3(v->name, strlen(v->name), seed0, seed1);
-}
-
-static int function_compare(const void* a, const void* b, void* udata) {
-    const struct statement** fa = (const struct statement**) a;
-    const struct statement** fb = (const struct statement**) b;
-
-    return strcmp((*fa)->op.function_declaration.fn_name, (*fb)->op.function_declaration.fn_name);
-}
-
-static uint64_t function_hash(const void* item, uint64_t seed0, uint64_t seed1) {
-    const struct statement** f = (const struct statement**) item;
-    return hashmap_xxhash3((*f)->op.function_declaration.fn_name, strlen((*f)->op.function_declaration.fn_name), seed0, seed1);
-}
-
 void init_context(struct context* context) {
     context->frames = NULL;
     context->should_break_loop = false;
@@ -50,12 +26,10 @@ void dump_context(struct context* context) {
 
 
 void dump_stack_frame(struct stack_frame* frame) {
-    size_t iter = 0;
-    void* item;
-    while (hashmap_iter(frame->variables, &iter, &item)) {
-        const struct runtime_variable* variable = item;
-        printf("%s: %s = ", variable->name, runtime_type_to_string(variable->content.type));
-        print_value(&variable->content);
+    for (size_t i = 0; i < shlen(frame->variables); i++) {
+        const struct runtime_variable_entry entry = frame->variables[i];
+        printf("%s: %s = ", entry.key, runtime_type_to_string(entry.value.content.type));
+        print_value(&entry.value.content);
     }
 }
 
@@ -96,8 +70,8 @@ void destroy_context(struct context* context) {
 
 void push_stack_frame(struct context* context) {
     struct stack_frame frame = {
-            .variables = hashmap_new(sizeof(struct runtime_variable), 0, 0, 0, variable_hash, variable_compare, NULL, NULL),
-            .functions = hashmap_new(sizeof(struct statement*), 0, 0, 0, function_hash, function_compare, NULL, NULL),
+            .variables = NULL,
+            .functions = NULL,
     };
 
     arrpush(context->frames, frame);
@@ -106,21 +80,18 @@ void push_stack_frame(struct context* context) {
 void pop_stack_frame(struct context* context) {
     struct stack_frame* frame = get_current_stack_frame(context);
     // Free variables
-    size_t iter = 0;
-    void* item;
-    while (hashmap_iter(frame->variables, &iter, &item)) {
-        const struct runtime_variable* variable = item;
-        free(variable->name);
+    for (size_t i = 0; i < shlen(frame->variables); i++) {
+        const struct runtime_variable_entry entry = frame->variables[i];
+        free(entry.value.name);
 
-        // If the variable content is reference-counted, decrement the reference count
-        if (variable->content.type == RUNTIME_TYPE_STRING)
-            (*variable->content.value.string.reference_count)--;
+        if (entry.value.content.type == RUNTIME_TYPE_STRING)
+            (*entry.value.content.value.string.reference_count)--;
 
-        destroy_value(&variable->content);
+        destroy_value(&entry.value.content);
     }
-    hashmap_free(frame->variables);
+    shfree(frame->variables);
     // Functions are freed during AST destruction
-    hashmap_free(frame->functions);
+    shfree(frame->functions);
     arrpop(context->frames);
 }
 
@@ -140,7 +111,7 @@ void execute_statement(struct context* context, struct statement* statement) {
             break;
         }
         case STATEMENT_FUNCTION_DECL:
-            hashmap_set(get_current_stack_frame(context)->functions, &statement);
+            shput(get_current_stack_frame(context)->functions, statement->op.function_declaration.fn_name, statement);
             break;
         case STATEMENT_NAKED_FN_CALL: {
             struct runtime_value discarded_return_value = evaluate_expr(context, statement->op.naked_fn_call.function_call);
@@ -266,7 +237,7 @@ void execute_variable_assignment(struct context* context, struct statement* stat
             .is_constant = false,
     };
 
-    hashmap_set(context->frames[stack_index].variables, &variable);
+    shput(context->frames[stack_index].variables, variable.name, variable);
 }
 
 void execute_variable_declaration(struct context* context, struct statement* statement) {
@@ -297,18 +268,18 @@ void execute_variable_declaration(struct context* context, struct statement* sta
         (*variable.content.value.string.reference_count)++;
     }
 
-    hashmap_set(get_current_stack_frame(context)->variables, &variable);
+    shput(get_current_stack_frame(context)->variables, variable.name, variable);
 }
 
 const struct runtime_variable* get_variable(struct context* context, const char* variable_name, int* stack_index) {
     int i = arrlen(context->frames) - 1;
 
     REVERSE_FOR_EACH(struct stack_frame, it, context->frames) {
-        const struct runtime_variable* variable = (const struct runtime_variable*) hashmap_get(it->variables, &(struct runtime_variable){.name = (char*) variable_name});
+        const struct runtime_variable_entry* entry = shgetp_null(it->variables, variable_name);
 
-        if (variable != NULL) {
+        if (entry != NULL) {
             if (stack_index != NULL) *stack_index = i;
-            return variable;
+            return &entry->value;
         }
 
         i--;
@@ -321,13 +292,11 @@ const struct statement* get_function(struct context* context, const char* fn_nam
     int i = arrlen(context->frames) - 1;
 
     REVERSE_FOR_EACH(struct stack_frame, it, context->frames) {
-        struct statement search_term = {.type = STATEMENT_FUNCTION_DECL, .op.function_declaration.fn_name = (char*) fn_name};
-        struct statement* search_term_ptr = &search_term;
-        const struct statement** fn = (const struct statement**) hashmap_get(it->functions, &search_term_ptr);
+        const struct function_entry* entry = shgetp_null(it->functions, fn_name);
 
-        if (fn != NULL) {
+        if (entry != NULL) {
             if (stack_index != NULL) *stack_index = i;
-            return *fn;
+            return entry->value;
         }
 
         i--;
@@ -650,7 +619,7 @@ struct runtime_value evaluate_function_call(struct context* context, const char*
                 .is_constant = false,
                 .content = value,
         };
-        hashmap_set(get_current_stack_frame(context)->variables, &variable);
+        shput(get_current_stack_frame(context)->variables, variable.name, variable);
     }
 
     arrfree(evaluated_arguments);

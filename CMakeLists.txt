@@ -24,8 +24,6 @@ add_library(chadinterpreter
         src/ast.h
         src/stb_ds.h
         src/stb_extra.h
-        src/hashmap.c
-        src/hashmap.h
         src/interpreter.c
         src/interpreter.h
         src/lexer.c

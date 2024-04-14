@@ -5,7 +5,6 @@
 
 #include "ast.h"
 #include "gc.h"
-#include "hashmap.h"
 
 static const int MAX_RECURSION_DEPTH = 1000;
 
@@ -30,9 +29,19 @@ struct runtime_variable {
     struct runtime_value content;
 };
 
+struct runtime_variable_entry {
+    char* key;
+    struct runtime_variable value;
+};
+
+struct function_entry {
+    char* key;
+    struct statement* value;
+};
+
 struct stack_frame {
-    struct hashmap* variables;
-    struct hashmap* functions;
+    struct runtime_variable_entry* variables;
+    struct function_entry* functions;
 };
 
 struct context {
